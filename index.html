@@ -1,0 +1,2272 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<title>Fyous Event Scout</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Dental and advanced-manufacturing trade shows for 2026 and 2027, with per-event checklists, budgets and attendance tracking for Fyous.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link id="fontcss" rel="stylesheet" media="print" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,800&family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@400;600&display=swap">
+<!-- Shared database for the plan (Supabase). Pinned version, so an update can't break the page. -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/dist/umd/supabase.js"></script>
+<script>
+  // The Supabase project the plan is stored in. The key is the public "publishable" (anon) key, which is
+  // designed to sit in a web page. Never put the secret / service_role key here.
+  window.FYOUS_CONFIG = window.FYOUS_CONFIG || {
+    supabaseUrl: "https://fetdtdzwupzonopmhkuw.supabase.co",
+    supabaseKey: "sb_publishable_5y5v8FwAP5gm8z3P8HMBBQ_O6vugpYf",
+  };
+</script>
+<style id="fyous-css">
+  :root {
+    color-scheme: light;
+    --ground: #F1F4F3;
+    --surface: #FFFFFF;
+    --ink: #14201C;
+    --muted: #5A6763;
+    --rule: #D5DDDA;
+    --rule-soft: #E6ECE9;
+    --dental: #0A776E;
+    --dental-soft: #DCEFEC;
+    --mfg: #955800;
+    --mfg-soft: #F4E7D2;
+    --star: #B7791F;
+    --warn: #9A3B1B;
+    --good: #0A776E;
+    --focus: #0A776E;
+    --pin-lo: #C9D3D0;
+    --pin-hi: #0A776E;
+    --font-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --ground: #0E1412; --surface: #151D1A; --ink: #E4EBE8; --muted: #92A09B;
+      --rule: #2A3632; --rule-soft: #1F2926; --dental: #52C4B6; --dental-soft: #173430;
+      --mfg: #E3A447; --mfg-soft: #372A17; --star: #E8B04E; --warn: #F08A64; --good: #52C4B6;
+      --focus: #52C4B6; --pin-lo: #26312D; --pin-hi: #52C4B6;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --ground: #0E1412; --surface: #151D1A; --ink: #E4EBE8; --muted: #92A09B;
+    --rule: #2A3632; --rule-soft: #1F2926; --dental: #52C4B6; --dental-soft: #173430;
+    --mfg: #E3A447; --mfg-soft: #372A17; --star: #E8B04E; --warn: #F08A64; --good: #52C4B6;
+    --focus: #52C4B6; --pin-lo: #26312D; --pin-hi: #52C4B6;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; background: var(--ground); color: var(--ink);
+    font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+    padding-inline: 20px; padding-block: 24px 64px;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 22px; }
+  a { color: inherit; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+  .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .lbl { font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h2 { font-family: var(--font-display); font-stretch: 112%; font-weight: 600; font-size: 15px; margin: 0; }
+  .panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; }
+
+  /* Header + tabs */
+  header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 40px; }
+  .eyebrow { margin: 0 0 8px; }
+  h1 {
+    font-family: var(--font-display); font-stretch: 112%; font-weight: 800;
+    font-size: clamp(28px, 4.6vw, 44px); line-height: 1.02; letter-spacing: -.02em; margin: 0; text-wrap: balance;
+  }
+  h1 span { color: var(--dental); }
+  .lede { margin: 10px 0 0; max-width: 62ch; color: var(--muted); }
+  .pinfield { width: 240px; max-width: 100%; aspect-ratio: 5 / 2; display: block; }
+
+  nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--rule); }
+  nav.tabs a {
+    text-decoration: none; padding: 9px 16px; border: 1px solid transparent; border-bottom: 0;
+    border-radius: 5px 5px 0 0; color: var(--muted); font-weight: 600; font-size: 14.5px; margin-bottom: -1px;
+  }
+  nav.tabs a:hover { color: var(--ink); }
+  nav.tabs a[aria-current="page"] { background: var(--surface); border-color: var(--rule); color: var(--ink); }
+  nav.tabs .spacer { flex: 1; }
+
+  .stats { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; }
+  .stats b { font-weight: 600; }
+  .stats span { color: var(--muted); }
+
+  /* Year strip */
+  .year { padding: 14px 16px 10px; display: grid; gap: 10px; }
+  .row-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 20px; }
+  .legend { display: flex; gap: 4px 16px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+  .month { appearance: none; border: 1px solid transparent; background: transparent; padding: 4px 2px 6px; border-radius: 4px; cursor: pointer; display: grid; gap: 6px; justify-items: center; }
+  .month:hover { background: var(--rule-soft); }
+  .month[aria-pressed="true"] { border-color: var(--ink); background: var(--rule-soft); }
+  .stack { height: 56px; width: 100%; max-width: 34px; display: flex; flex-direction: column-reverse; gap: 2px; }
+  .stack b { display: block; flex: 0 1 7px; min-height: 2px; border-radius: 1.5px; }
+  .stack b.dental { background: var(--dental); }
+  .stack b.mfg { background: var(--mfg); }
+  .stack b.dim { opacity: .22; }
+  .month span { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+  .month[aria-pressed="true"] span { color: var(--ink); }
+
+  /* Ask Claude */
+  .ask { padding: 14px 16px; display: grid; gap: 12px; }
+  .ask form { display: flex; gap: 8px; flex-wrap: wrap; }
+  .ask input { flex: 1 1 280px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chips button { appearance: none; border: 1px dashed var(--rule); background: transparent; color: var(--muted); border-radius: 3px; padding: 3px 10px; font-size: 13px; cursor: pointer; text-align: left; }
+  .chips button:hover { color: var(--ink); border-color: var(--muted); }
+  .answer { border-top: 1px solid var(--rule-soft); padding-top: 12px; white-space: pre-wrap; max-width: 80ch; font-size: 14.5px; }
+  .answer.thinking { color: var(--muted); font-style: italic; }
+  .ask-note { font-size: 12px; color: var(--muted); margin: 0; }
+
+  /* Buttons + inputs */
+  .btn { appearance: none; border: 1px solid var(--ink); background: var(--ink); color: var(--surface); border-radius: 4px; padding: 7px 14px; min-height: 36px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--ink); border-color: var(--rule); font-weight: 400; }
+  .btn.ghost:hover { border-color: var(--ink); }
+  .btn:disabled { opacity: .5; cursor: default; }
+  input[type="search"], input[type="text"], input[type="number"], input[type="date"], select, textarea {
+    font: inherit; font-size: 14px; color: var(--ink); background: var(--surface);
+    border: 1px solid var(--rule); border-radius: 4px; padding: 7px 10px; min-height: 36px;
+  }
+  textarea { min-height: 90px; resize: vertical; width: 100%; line-height: 1.5; }
+  .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; background: var(--surface); }
+  .seg button { appearance: none; border: 0; background: transparent; color: var(--muted); font-size: 14px; padding: 7px 12px; min-height: 36px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--rule); }
+  .seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+  .linkish { appearance: none; background: transparent; border: 0; color: var(--muted); font-size: 14px; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 8px 2px; min-height: 36px; }
+  .linkish:hover { color: var(--ink); }
+
+  /* Controls */
+  .controls { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; padding-block: 4px; }
+  .field { display: grid; gap: 4px; }
+  #q { width: 230px; max-width: 100%; }
+  .tools { margin-left: auto; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .count { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+  .claude-filter { display: flex; gap: 10px; align-items: center; font-size: 13px; background: var(--dental-soft); padding: 6px 10px; border-radius: 4px; width: 100%; }
+
+  /* Table */
+  /* Wide tables: the native scrollbar (only reachable below the last row) is replaced by a bar
+     pinned to the bottom of the window while the table is on screen. */
+  .table-wrap { position: relative; }
+  .table-box { overflow-x: auto; scrollbar-width: none; border-radius: 6px; }
+  .table-box::-webkit-scrollbar { display: none; }
+  .table-box:focus-visible { outline-offset: -2px; }
+  .hscroll {
+    position: sticky; bottom: 0; z-index: 3;
+    display: flex; align-items: center; gap: 8px; padding: 6px 8px;
+    background: var(--surface); border-top: 1px solid var(--rule); border-radius: 0 0 6px 6px;
+  }
+  .hs-track { flex: 1; min-width: 0; overflow-x: auto; overflow-y: hidden; height: 16px; scrollbar-color: var(--muted) var(--rule-soft); }
+  .hs-inner { height: 1px; }
+  .hs-track::-webkit-scrollbar { height: 12px; }
+  .hs-track::-webkit-scrollbar-track { background: var(--rule-soft); border-radius: 6px; }
+  .hs-track::-webkit-scrollbar-thumb { background: var(--muted); border-radius: 6px; border: 2px solid var(--rule-soft); }
+  .hs-track::-webkit-scrollbar-thumb:hover { background: var(--ink); }
+  .hs-btn { appearance: none; flex: none; width: 32px; height: 28px; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); color: var(--ink); font-size: 11px; cursor: pointer; }
+  .hs-btn:hover:not(:disabled) { border-color: var(--ink); }
+  .hs-btn:disabled { opacity: .35; cursor: default; }
+  .hs-hint { flex: none; font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+  /* Fade on whichever edge has more columns hidden */
+  .table-wrap::before, .table-wrap::after { content: ""; position: absolute; top: 0; bottom: 0; width: 32px; pointer-events: none; opacity: 0; z-index: 2; transition: opacity .15s; }
+  .table-wrap::before { left: 0; background: linear-gradient(to right, var(--surface), transparent); border-radius: 6px 0 0 6px; }
+  .table-wrap::after { right: 0; background: linear-gradient(to left, var(--surface), transparent); border-radius: 0 6px 6px 0; }
+  .table-wrap.more-left::before, .table-wrap.more-right::after { opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .table-wrap::before, .table-wrap::after { transition: none; } }
+  @media (max-width: 600px), (hover: none) { .hs-hint { display: none; } }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { text-align: left; font-weight: 400; border-bottom: 1px solid var(--rule); padding: 0; white-space: nowrap; }
+  thead th button, thead th .th {
+    appearance: none; background: transparent; border: 0; color: var(--muted);
+    font-family: var(--font-mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+    padding: 11px 12px; cursor: pointer; display: flex; gap: 6px; align-items: center; width: 100%;
+  }
+  thead th .th { cursor: default; }
+  thead th button:hover, th[aria-sort="ascending"] button, th[aria-sort="descending"] button { color: var(--ink); }
+  .arrow { width: 8px; display: inline-block; font-size: 8px; }
+  th[aria-sort="ascending"] .arrow::after { content: "▲"; }
+  th[aria-sort="descending"] .arrow::after { content: "▼"; }
+  th.num button { justify-content: flex-end; }
+  tbody td { padding: 12px; vertical-align: top; border-bottom: 1px solid var(--rule-soft); }
+  tbody tr:last-child td { border-bottom: 0; }
+  tbody tr:hover td { background: color-mix(in srgb, var(--rule-soft) 55%, transparent); }
+  tbody tr.tracked td:first-child { box-shadow: inset 3px 0 0 var(--star); }
+
+  .ev { display: grid; gap: 6px; min-width: 220px; }
+  .ev .open { display: inline-flex; align-items: baseline; gap: 6px; font-weight: 600; font-size: 15px; line-height: 1.3; text-decoration: none; }
+  .ev .open:hover { text-decoration: underline; text-underline-offset: 3px; }
+  .ev .go { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .badges { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .chip { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 3px; white-space: nowrap; }
+  .chip.dental { background: var(--dental-soft); color: var(--dental); }
+  .chip.mfg { background: var(--mfg-soft); color: var(--mfg); }
+  .chip.status { border: 1px solid var(--rule); color: var(--muted); background: transparent; }
+  .chip.status.going, .chip.status.attended, .chip.status.booked { border-color: var(--star); color: var(--star); }
+  .dates { white-space: nowrap; font-size: 14px; }
+  .sub { display: block; font-size: 12px; color: var(--muted); font-family: var(--font-body); white-space: normal; margin-top: 2px; }
+  .clash { color: var(--warn); }
+  .same { color: var(--dental); }
+  .loc { min-width: 110px; }
+  .loc strong { font-weight: 600; display: block; }
+  .num-cell { white-space: nowrap; text-align: right; min-width: 92px; }
+  .num-cell .big { font-size: 15px; }
+  .num-cell .sub { text-align: right; }
+  .est { font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; border: 1px dashed var(--muted); color: var(--muted); border-radius: 3px; padding: 0 4px; margin-left: 5px; vertical-align: 1px; cursor: help; }
+  .none { color: var(--muted); }
+  .aud { min-width: 180px; max-width: 250px; font-size: 14px; }
+  .fit { min-width: 170px; max-width: 260px; font-size: 13px; color: var(--muted); }
+  .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--ink); margin-bottom: 4px; white-space: nowrap; }
+  .pill i { width: 18px; height: 6px; display: inline-flex; gap: 2px; }
+  .pill i b { flex: 1; background: var(--rule); border-radius: 1px; }
+  .pill.high i b { background: var(--dental); }
+  .pill.medium i b:nth-child(-n+2) { background: var(--muted); }
+  .pill.watch i b:first-child { background: var(--muted); }
+  .fit p { margin: 0; }
+  .empty { padding: 36px 16px; text-align: center; color: var(--muted); }
+
+  /* Event detail */
+  .detail { display: grid; gap: 20px; }
+  .back { display: inline-block; font-size: 14px; color: var(--muted); text-decoration: none; }
+  .back:hover { color: var(--ink); }
+  .detail-head { display: grid; gap: 10px; }
+  .detail-head h2 { font-size: clamp(22px, 3.4vw, 32px); font-weight: 800; letter-spacing: -.01em; line-height: 1.1; }
+  .detail-meta { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 14px; color: var(--muted); align-items: center; }
+  .detail-meta b { color: var(--ink); font-weight: 600; }
+  .status-row { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+  .cols { display: grid; grid-template-columns: 1.05fr 1fr; gap: 20px; align-items: start; }
+  .card { padding: 16px; display: grid; gap: 12px; }
+  .card > .row-head { align-items: center; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px 16px; }
+  .fact { display: grid; gap: 2px; }
+  .fact b { font-size: 19px; font-weight: 600; font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .prose { margin: 0; font-size: 14px; }
+  .prose + .prose { margin-top: 8px; }
+
+  ul.tasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  ul.tasks li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 10px; align-items: center; padding: 7px 6px; border-radius: 4px; }
+  ul.tasks li:hover { background: var(--rule-soft); }
+  ul.tasks input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--dental); margin: 0; }
+  ul.tasks label { font-size: 14.5px; cursor: pointer; }
+  ul.tasks li.done label { color: var(--muted); text-decoration: line-through; }
+  .checklist-on, .checklist-off { display: grid; gap: 12px; }
+  .checklist-off .btn { justify-self: start; }
+  .task-text { display: grid; gap: 1px; min-width: 0; }
+  .due { font-size: 12px; color: var(--muted); }
+  .due.overdue { color: var(--warn); font-weight: 600; }
+  .due.soon { color: var(--star); font-weight: 600; }
+  .due-input { min-height: 30px !important; padding: 3px 6px !important; font-size: 13px !important; width: 140px; }
+  .del {
+    appearance: none; background: transparent; border: 1px solid transparent; color: var(--muted); cursor: pointer;
+    font-size: 19px; line-height: 1; width: 30px; height: 30px; border-radius: 4px; display: inline-grid; place-items: center;
+  }
+  .del:hover { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); background: color-mix(in srgb, var(--warn) 8%, transparent); }
+  .progress { height: 6px; border-radius: 3px; background: var(--rule-soft); overflow: hidden; }
+  .progress i { display: block; height: 100%; background: var(--dental); border-radius: 3px; transition: width .2s; }
+  @media (prefers-reduced-motion: reduce) { .progress i { transition: none; } }
+  .add-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .add-row input[type="text"] { flex: 1 1 160px; min-width: 0; }
+  .detail > *, .cols > * { min-width: 0; }
+
+  table.budget { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.budget th { text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; padding: 0 6px 6px; }
+  table.budget th.r, table.budget td.r { text-align: right; }
+  table.budget td { padding: 3px 6px; border-bottom: 1px solid var(--rule-soft); }
+  table.budget input[type="number"] { width: 100%; text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; min-height: 32px; padding: 4px 8px; }
+  table.budget input[type="text"] { width: 100%; border-color: transparent; background: transparent; min-height: 32px; padding: 4px 6px; }
+  table.budget input[type="text"]:hover { border-color: var(--rule); }
+  table.budget tfoot td { font-weight: 600; border-bottom: 0; padding-top: 10px; }
+  .variance.over { color: var(--warn); }
+  .variance.under { color: var(--good); }
+
+  /* Performance */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+  .tile { padding: 14px 16px; display: grid; gap: 4px; }
+  .tile b { font-family: var(--font-mono); font-size: 27px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .tile .sub { margin: 0; }
+  .chart { width: 100%; height: auto; display: block; }
+  table.perf { width: 100%; border-collapse: collapse; font-size: 14px; }
+  table.perf th { text-align: left; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 400; padding: 8px 10px; border-bottom: 1px solid var(--rule); }
+  table.perf th.r, table.perf td.r { text-align: right; }
+  table.perf td { padding: 9px 10px; border-bottom: 1px solid var(--rule-soft); }
+  table.perf tbody tr:last-child td { border-bottom: 0; }
+  table.perf .yr td { background: var(--rule-soft); font-weight: 600; }
+
+  /* To do */
+  nav.tabs .badge { display: inline-block; min-width: 20px; padding: 0 6px; margin-left: 6px; border-radius: 10px; background: var(--warn); color: var(--surface); font-size: 12px; line-height: 19px; text-align: center; font-family: var(--font-mono); font-weight: 600; }
+  nav.tabs .badge.calm { background: var(--rule); color: var(--ink); }
+  .todo-summary { display: flex; flex-wrap: wrap; gap: 6px 22px; font-size: 14px; margin: 0; }
+  .todo-summary b { font-family: var(--font-mono); font-size: 18px; margin-right: 4px; }
+  .todo-summary .overdue b { color: var(--warn); }
+  .todo-summary .soon b { color: var(--star); }
+  .todo-bar { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+  .todo-bar label.check { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+  .todo-bar input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--dental); }
+  .bucket { padding: 14px 16px; display: grid; gap: 6px; }
+  .bucket > .row-head { padding-bottom: 6px; border-bottom: 1px solid var(--rule-soft); }
+  .bucket.overdue { border-color: color-mix(in srgb, var(--warn) 45%, var(--rule)); }
+  .bucket h2 .n { font-family: var(--font-mono); font-weight: 400; color: var(--muted); margin-left: 6px; }
+  .group-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 12px; margin-top: 8px; font-size: 13px; }
+  .group-head a { font-weight: 600; text-decoration: none; }
+  .group-head a:hover { text-decoration: underline; text-underline-offset: 3px; }
+  ul.todo { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+  ul.todo li { display: grid; grid-template-columns: auto 1fr auto auto; gap: 2px 12px; align-items: center; padding: 8px 6px; border-radius: 4px; }
+  ul.todo li:hover { background: var(--rule-soft); }
+  ul.todo input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--dental); margin: 0; }
+  ul.todo label { font-size: 14.5px; cursor: pointer; }
+  ul.todo .ev-link { font-size: 12.5px; color: var(--muted); text-decoration: none; white-space: nowrap; }
+  ul.todo .ev-link:hover { color: var(--ink); text-decoration: underline; }
+  ul.todo li.done label { color: var(--muted); text-decoration: line-through; }
+  .chip.warn { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+  .toast {
+    position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); z-index: 10;
+    display: flex; gap: 14px; align-items: center; padding: 10px 14px; border-radius: 6px;
+    background: var(--ink); color: var(--surface); font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25); max-width: calc(100% - 32px);
+  }
+  .toast button { appearance: none; border: 0; background: transparent; color: var(--surface); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 4px; }
+
+  /* Shared plan: save status and banners */
+  nav.tabs { align-items: center; }
+  .live-status { font-size: 13px; color: var(--muted); margin: 0 10px 4px 0; display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .live-status.ok { color: var(--good); }
+  .live-status.busy { color: var(--star); }
+  .live-status.bad { color: var(--warn); }
+  .live-status button { appearance: none; background: transparent; border: 0; color: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; padding: 2px; font-size: 13px; }
+  .live-banner { padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; border-color: var(--star); }
+  .live-banner p { margin: 0; flex: 1 1 320px; font-size: 14px; }
+  .live-banner .btn { min-height: 32px; padding: 4px 12px; }
+  /* While the shared plan loads, the page is shown but can't be changed yet */
+  body.loading #view-year, body.loading #view-event, body.loading #view-todo, body.loading #view-perf { opacity: .55; pointer-events: none; }
+
+  footer { font-size: 13px; color: var(--muted); display: grid; gap: 8px; max-width: 80ch; }
+  footer p { margin: 0; }
+  .saved { font-size: 12px; color: var(--muted); }
+
+  @media (max-width: 960px) {
+    .cols { grid-template-columns: 1fr; }
+    .tools { margin-left: 0; width: 100%; justify-content: space-between; }
+    thead { display: none; }
+    table.list, table.list tbody, table.list tr, table.list td { display: block; width: 100%; }
+    table.list tbody tr { padding: 14px 14px 10px; border-bottom: 1px solid var(--rule); display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 14px; }
+    table.list tbody tr:last-child { border-bottom: 0; }
+    table.list tbody td { padding: 0; border: 0; min-width: 0; max-width: none; }
+    table.list tbody tr:hover td { background: transparent; }
+    table.list tbody tr.tracked { box-shadow: inset 3px 0 0 var(--star); }
+    table.list tbody tr.tracked td:first-child { box-shadow: none; }
+    td.ev-cell, td.aud, td.fit { grid-column: 1 / -1; }
+    td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .num-cell, .num-cell .sub { text-align: left; }
+    .dates { white-space: normal; }
+  }
+  @media (max-width: 480px) {
+    body { padding-inline: 16px; }
+    .pinfield { width: 150px; }
+    nav.tabs a { padding: 8px 10px; font-size: 14px; }    ul.tasks li { grid-template-columns: auto 1fr auto; }
+    ul.tasks li .due-input { grid-column: 2; grid-row: 2; justify-self: start; }
+    ul.tasks li .del { grid-column: 3; grid-row: 1; }
+    ul.todo li { grid-template-columns: auto 1fr auto; }
+    ul.todo .ev-link { grid-column: 2; grid-row: 2; white-space: normal; }
+    ul.todo .del { grid-column: 3; grid-row: 1; }
+    .months { gap: 2px; }
+    .month span { font-size: 9px; letter-spacing: 0; }
+  }
+  @media print {
+    body { background: #fff; color: #000; padding: 0; font-size: 11px; }
+    .pinfield, .year, .ask, .controls, nav.tabs, .linkish, .btn, .del, .hscroll { display: none !important; }
+    .table-wrap::before, .table-wrap::after { display: none; }
+    .panel { border: 0; }
+    tbody tr { break-inside: avoid; }
+  }
+</style>
+<div id="app"></div>
+<!-- Event data. Edit the objects below; field meanings are documented in the comment. -->
+<script id="fyous-events">
+/* Fyous Event Scout — event data.
+   Edit the objects below to add, remove or correct events. (The page's plan — statuses, checklists,
+   budgets — is NOT here: it lives in the shared online database, so everyone edits the same plan.)
+
+   Fields
+     id             short unique slug (used to store checklists and budgets)
+     year           2026 or 2027 — which tab the event appears on
+     cat            "dental" or "mfg"
+     start/end      YYYY-MM-DD (end is the last day, inclusive)
+     attendees      visitors / delegates, most recent published figure (null = not published)
+     exhibitors     companies exhibiting, most recent published figure (null = not published)
+     *Note          where that number comes from
+     *Est           true when it's a rough guide rather than a published figure
+     fit            "high" | "medium" | "watch" — suggested priority for Fyous
+     fyous          "attended" or "booked" — Fyous's own history, shown on the Performance tab
+*/
+window.FYOUS_DATA = {
+  checked: "2026-09-16",
+  events: [
+    /* ============================ 2026 — where Fyous went ============================ */
+    { id: "bdia-showcase-2026", year: 2026, fyous: "attended",
+      name: "BDIA Dental Showcase", url: "https://dentalshowcase.com/", cat: "dental", tag: "Dental trade show",
+      start: "2026-03-13", end: "2026-03-14", city: "London", country: "UK", region: "Europe",
+      attendees: 6000, attendeesNote: "Figure not published", attendeesEst: true,
+      exhibitors: 300, exhibitorsNote: "2026 figure (300+ suppliers)", exhibitorsEst: false,
+      audience: "UK dentists, dental teams, labs and dealers; the British Dental Industry Association's show at ExCeL",
+      fit: "medium", why: "Where the UK dental supply chain exhibits — distributors and partners for a UK launch." },
+    { id: "aao-2026", year: 2026, fyous: "attended",
+      name: "AAO Annual Session", url: "https://annualsession.aaoinfo.org/", cat: "dental", tag: "Orthodontics",
+      start: "2026-05-01", end: "2026-05-03", city: "Orlando", country: "USA", region: "North America",
+      attendees: 10000, attendeesNote: "Organiser's usual guide", attendeesEst: true,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "Orthodontists and orthodontic staff — the American Association of Orthodontists' main meeting",
+      fit: "high", why: "Orthodontists prescribe aligners and the big aligner brands exhibit." },
+    { id: "bdcds-2026", year: 2026, fyous: "attended",
+      name: "British Dental Conference & Dentistry Show + DTS", url: "https://birmingham.dentistryshow.co.uk/", cat: "dental", tag: "Dental congress · lab",
+      start: "2026-05-15", end: "2026-05-16", city: "Birmingham", country: "UK", region: "Europe",
+      attendees: 10300, attendeesNote: "2026 figure (DTS added 1,400)", attendeesEst: false,
+      exhibitors: 400, exhibitorsNote: "2026 figure (400+ brands)", exhibitorsEst: false,
+      audience: "UK dentists and dental teams, plus dental technicians and lab owners at the co-located Dental Technology Showcase",
+      fit: "high", why: "The UK's largest dental event, with the dedicated lab show (DTS) in the same hall." },
+    { id: "lab-day-east-2026", year: 2026, fyous: "booked",
+      name: "LMT Lab Day East", url: "https://lmtmag.com/lmtlabdayeast", cat: "dental", tag: "Dental lab",
+      start: "2026-09-26", end: "2026-09-26", city: "Tarrytown, NY", country: "USA", region: "North America",
+      attendees: 489, attendeesNote: "Recent edition, organiser figure", attendeesEst: true,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "Dental lab owners, managers, technicians and denturists in the US Northeast; one-day show",
+      fit: "high", why: "Small, concentrated room of lab decision-makers — the core buyer for a pin-mould machine." },
+    { id: "formnext-2026", year: 2026, fyous: "booked",
+      name: "Formnext", url: "https://formnext.mesago.com/frankfurt/en.html", cat: "mfg", tag: "3D printing",
+      start: "2026-11-17", end: "2026-11-20", city: "Frankfurt", country: "Germany", region: "Europe",
+      attendees: 38000, attendeesNote: "2026, expected (2025: 38,282)", attendeesEst: false,
+      exhibitors: 800, exhibitorsNote: "2026, expected (2025: 804)", exhibitorsEst: false,
+      audience: "Additive-manufacturing engineers, production managers and buyers, including dental and medical AM",
+      fit: "high", why: "The world's leading AM show. Best place to pitch a faster, waste-free alternative to printed models." },
+
+    /* ============================ 2027 — dental & orthodontic ============================ */
+    { id: "nadl-v21", year: 2027, name: "NADL Vision 21", url: "https://www.nadl.org/vision-21", cat: "dental", tag: "Dental lab business",
+      start: "2027-01-14", end: "2027-01-16", city: "Las Vegas", country: "USA", region: "North America",
+      attendees: 400, attendeesNote: "Small meeting, not published", attendeesEst: true,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "US dental lab owners and managers — the National Association of Dental Laboratories' annual meeting",
+      fit: "high", why: "A room full of lab decision-makers who buy production equipment. Small enough to actually talk to people." },
+    { id: "aeedc", year: 2027, name: "AEEDC Dubai", url: "https://aeedc.com/", cat: "dental", tag: "Dental trade show",
+      start: "2027-01-19", end: "2027-01-21", city: "Dubai", country: "UAE", region: "Middle East",
+      attendees: 74000, attendeesNote: "2026, expected (pre-show)", attendeesEst: false,
+      exhibitors: 3900, exhibitorsNote: "2024 figure (3,900+)", exhibitorsEst: false,
+      audience: "Dentists, dental labs, distributors and manufacturers from the Middle East, Africa and South Asia",
+      fit: "medium", why: "World's largest annual dental show; good for distributor contacts in new markets." },
+    { id: "ciosp", year: 2027, name: "CIOSP", url: "https://www.ciosp.com.br/", cat: "dental", tag: "Dental congress",
+      start: "2027-01-27", end: "2027-01-30", city: "São Paulo", country: "Brazil", region: "Latin America",
+      attendees: 70000, attendeesNote: "2025 figure", attendeesEst: false,
+      exhibitors: 300, exhibitorsNote: "2026 figure (~300)", exhibitorsEst: false,
+      audience: "Brazilian and Latin American dentists, dental teams, labs and dealers",
+      fit: "watch", why: "Latin America's biggest dental event — worth tracking for later expansion." },
+    { id: "yankee", year: 2027, name: "Yankee Dental Congress", url: "https://www.yankeedental.com/", cat: "dental", tag: "Dental congress",
+      start: "2027-01-28", end: "2027-01-30", city: "Boston", country: "USA", region: "North America",
+      attendees: 27000, attendeesNote: "Typical yearly average", attendeesEst: false,
+      exhibitors: 323, exhibitorsNote: "From trade listings", exhibitorsEst: true,
+      audience: "Dentists, hygienists and dental teams, mostly from New England",
+      fit: "watch", why: "Clinician-focused regional meeting; limited lab or aligner-manufacturing angle." },
+    { id: "mdm-west", year: 2027, name: "MD&M West", url: "https://www.mdmwest.com/", cat: "mfg", tag: "Medtech manufacturing",
+      start: "2027-02-09", end: "2027-02-11", city: "Anaheim", country: "USA", region: "North America",
+      attendees: 13500, attendeesNote: "Expected, organiser figure", attendeesEst: false,
+      exhibitors: 1700, exhibitorsNote: "Expected (1,700+)", exhibitorsEst: false,
+      audience: "Medical-device engineers, contract manufacturers, plastics and automation suppliers",
+      fit: "medium", why: "Medical-device manufacturing crowd — materials, thermoforming and regulatory suppliers." },
+    { id: "ams", year: 2027, name: "Additive Manufacturing Strategies", url: "https://additivemanufacturingstrategies.com/", cat: "mfg", tag: "3D printing business",
+      start: "2027-02-23", end: "2027-02-25", city: "New York", country: "USA", region: "North America",
+      attendees: 400, attendeesNote: "Conference-sized, not published", attendeesEst: true,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "3D printing executives, investors and industry analysts",
+      fit: "medium", why: "Investor-heavy — useful for positioning Fyous as the alternative to printed aligner models." },
+    { id: "lmt-lab-day", year: 2027, name: "LMT Lab Day Chicago", url: "https://lmtmag.com/lmtlabday", cat: "dental", tag: "Dental lab",
+      start: "2027-02-25", end: "2027-02-27", city: "Chicago", country: "USA", region: "North America",
+      attendees: 4600, attendeesNote: "2026, expected (pre-show)", attendeesEst: false,
+      exhibitors: 275, exhibitorsNote: "2026 figure (275+)", exhibitorsEst: false,
+      audience: "Dental lab owners, technicians and lab managers — North America's largest dental lab event",
+      fit: "high", why: "The core buyer for a model-free aligner mould machine is here." },
+    { id: "cds-midwinter", year: 2027, name: "CDS Midwinter Meeting", url: "https://www.cds.org/event/midwinter-meeting-2027/", cat: "dental", tag: "Dental congress",
+      start: "2027-02-25", end: "2027-02-27", city: "Chicago", country: "USA", region: "North America",
+      attendees: 25000, attendeesNote: "2025 figure", attendeesEst: false,
+      exhibitors: 400, exhibitorsNote: "2026 figure (400+)", exhibitorsEst: false,
+      audience: "Dentists, specialists and dental teams; large US dental exhibition",
+      fit: "medium", why: "Same days and city as LMT Lab Day — one Chicago trip covers labs and clinicians." },
+    { id: "dental-south-china", year: 2027, name: "Dental South China", url: "https://www.dentalsouthchina.com/?_l=en", cat: "dental", tag: "Dental trade show",
+      start: "2027-03-03", end: "2027-03-06", city: "Guangzhou", country: "China", region: "Asia",
+      attendees: 74788, attendeesNote: "2026 figure", attendeesEst: false,
+      exhibitors: 1156, exhibitorsNote: "2026 figure", exhibitorsEst: false,
+      audience: "Chinese dentists, dental dealers, labs and equipment manufacturers",
+      fit: "medium", why: "Where China's aligner and dental CAD/CAM makers exhibit — useful competitor and supplier intel." },
+    { id: "bdia-showcase", year: 2027, name: "BDIA Dental Showcase", url: "https://dentalshowcase.com/", cat: "dental", tag: "Dental trade show",
+      start: "2027-03-05", end: "2027-03-06", city: "London", country: "UK", region: "Europe",
+      attendees: 6000, attendeesNote: "Figure not published", attendeesEst: true,
+      exhibitors: 300, exhibitorsNote: "2026 figure (300+ suppliers)", exhibitorsEst: false,
+      audience: "UK dentists, dental teams, labs and dealers meeting 300+ dental suppliers — the British Dental Industry Association's show",
+      fit: "medium", why: "Where the UK dental supply chain exhibits — distributors and partners for a UK launch. Fyous attended in 2026." },
+    { id: "pdc", year: 2027, name: "Pacific Dental Conference", url: "https://pacificdentalconference.com/", cat: "dental", tag: "Dental congress",
+      start: "2027-03-04", end: "2027-03-06", city: "Vancouver", country: "Canada", region: "North America",
+      attendees: 14761, attendeesNote: "2025 figure", attendeesEst: false,
+      exhibitors: 300, exhibitorsNote: "2026 figure (~300)", exhibitorsEst: false,
+      audience: "Canadian dentists, hygienists, assistants and dental teams",
+      fit: "watch", why: "Canada's main clinical meeting; low priority unless targeting Canada." },
+    { id: "amug", year: 2027, name: "AMUG Conference", url: "https://www.amug.com/", cat: "mfg", tag: "3D printing",
+      start: "2027-03-14", end: "2027-03-18", city: "Atlantic City", country: "USA", region: "North America",
+      attendees: 1000, attendeesNote: "Rough size, not published", attendeesEst: true,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "Hands-on users of industrial 3D printers — engineers and operators (attendees must own AM equipment)",
+      fit: "watch", why: "Deep practitioner insight into printing's pain points, but a restricted, user-only audience." },
+    { id: "ids", year: 2027, name: "IDS — International Dental Show", url: "https://www.english.ids-cologne.de/", cat: "dental", tag: "Dental trade show",
+      start: "2027-03-16", end: "2027-03-20", city: "Cologne", country: "Germany", region: "Europe",
+      attendees: 135000, attendeesNote: "2025 figure · every 2 years", attendeesEst: false,
+      exhibitors: 2000, exhibitorsNote: "2025 figure (2,000+ from 61 countries)", exhibitorsEst: false,
+      audience: "The whole dental industry: manufacturers, dealers, lab owners, technicians and dentists from 150+ countries",
+      fit: "high", why: "The world's biggest dental show, and it only runs in odd years. Every aligner and lab-tech player is here." },
+    { id: "hannover-messe", year: 2027, name: "Hannover Messe", url: "https://www.hannovermesse.de/en/", cat: "mfg", tag: "Industrial",
+      start: "2027-04-05", end: "2027-04-08", city: "Hannover", country: "Germany", region: "Europe",
+      attendees: 110000, attendeesNote: "2026 figure", attendeesEst: false,
+      exhibitors: 3000, exhibitorsNote: "2026 figure", exhibitorsEst: false,
+      audience: "Manufacturing engineers, automation and industrial-tech executives",
+      fit: "watch", why: "Huge and broad; relevant for future non-dental uses of pin moulding." },
+    { id: "eas8", year: 2027, name: "European Aligner Society Congress (EAS8)", url: "https://www.eas-aligners.com/", cat: "dental", tag: "Aligners",
+      start: "2027-04-08", end: "2027-04-10", city: "Lisbon", country: "Portugal", region: "Europe",
+      attendees: 1000, attendeesNote: "2025 figure (Rhodes), 60 countries", attendeesEst: false,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "Orthodontists and dentists who treat with clear aligners, plus aligner researchers and industry",
+      fit: "high", why: "The only big congress entirely about aligners — exactly Fyous's end product." },
+    { id: "rapid-tct", year: 2027, name: "RAPID + TCT", url: "https://www.rapid3devent.com/", cat: "mfg", tag: "3D printing",
+      start: "2027-04-12", end: "2027-04-15", dateSub: "Exhibition 13–15 Apr", city: "Detroit", country: "USA", region: "North America",
+      attendees: 10000, attendeesNote: "2025 figure (Detroit)", attendeesEst: false,
+      exhibitors: 500, exhibitorsNote: "2025 figure (500+)", exhibitorsEst: false,
+      audience: "Additive-manufacturing engineers, product designers and buyers from aerospace, automotive and medical",
+      fit: "high", why: "North America's top 3D printing event — the technology Fyous replaces for aligner models." },
+    { id: "chinaplas", year: 2027, name: "CHINAPLAS", url: "https://www.chinaplasonline.com/", cat: "mfg", tag: "Plastics",
+      start: "2027-04-13", end: "2027-04-16", city: "Shenzhen", country: "China", region: "Asia",
+      attendees: 350189, attendeesNote: "2026 figure (Shanghai)", attendeesEst: false,
+      exhibitors: 5104, exhibitorsNote: "2026 figure", exhibitorsEst: false,
+      audience: "Plastics and rubber processors, machinery buyers and material suppliers",
+      fit: "watch", why: "Enormous plastics show; a source of thermoforming sheet and machinery suppliers." },
+    { id: "npe", year: 2027, name: "NPE2027 — The Plastics Show", url: "https://www.npe.org/", cat: "mfg", tag: "Plastics",
+      start: "2027-05-03", end: "2027-05-07", city: "Orlando", country: "USA", region: "North America",
+      attendees: 55000, attendeesNote: "Expected · held every 3 years", attendeesEst: false,
+      exhibitors: 2000, exhibitorsNote: "Expected (2,000+); floor 87% sold", exhibitorsEst: true,
+      audience: "Plastics processors, moulders, thermoformers, materials and equipment suppliers",
+      fit: "medium", why: "Only happens every three years; the Americas' largest plastics and moulding show." },
+    { id: "expodental", year: 2027, name: "Expodental Meeting", url: "https://www.expodental.it/en/", cat: "dental", tag: "Dental trade show",
+      start: "2027-05-13", end: "2027-05-15", city: "Rimini", country: "Italy", region: "Europe",
+      attendees: 21000, attendeesNote: "2025 figure", attendeesEst: false,
+      exhibitors: 400, exhibitorsNote: "2025 figure", exhibitorsEst: false,
+      audience: "Italian dentists, dental labs and dealers; Italy's main dental trade fair",
+      fit: "watch", why: "Strong Italian lab sector, but mostly a domestic audience." },
+    { id: "dts", year: 2027, name: "Dental Technology Showcase (DTS)", url: "https://www.the-dts.co.uk/", cat: "dental", tag: "Dental lab",
+      start: "2027-05-14", end: "2027-05-15", city: "Birmingham", country: "UK", region: "Europe",
+      attendees: 1400, attendeesNote: "2026 figure (delegates)", attendeesEst: false,
+      exhibitors: null, exhibitorsNote: "Shares the Dentistry Show floor", exhibitorsEst: false,
+      audience: "UK dental technicians, lab owners and clinical dental technicians",
+      fit: "high", why: "The UK's dedicated dental lab show, co-located with the Dentistry Show — both audiences in one hall. Fyous attended in 2026." },
+    { id: "bdcds", year: 2027, name: "British Dental Conference & Dentistry Show", url: "https://birmingham.dentistryshow.co.uk/", cat: "dental", tag: "Dental congress",
+      start: "2027-05-14", end: "2027-05-15", city: "Birmingham", country: "UK", region: "Europe",
+      attendees: 10300, attendeesNote: "2026 figure", attendeesEst: false,
+      exhibitors: 400, exhibitorsNote: "2026 figure (400+ brands)", exhibitorsEst: false,
+      audience: "UK dentists, dental nurses, practice managers and dental teams",
+      fit: "medium", why: "The UK's largest dental event; same venue and days as DTS. Fyous attended in 2026." },
+    { id: "lmt-lab-day-west", year: 2027, name: "LMT Lab Day West", url: "https://lmtmag.com/lmtlabdaywest", cat: "dental", tag: "Dental lab",
+      start: "2027-05-14", end: "2027-05-15", city: "Garden Grove", country: "USA", region: "North America",
+      attendees: 1765, attendeesNote: "Recent edition, organiser figure", attendeesEst: false,
+      exhibitors: 200, exhibitorsNote: "Recent edition (~200)", exhibitorsEst: true,
+      audience: "Dental lab owners, managers and technicians on the US West Coast; free exhibit halls",
+      fit: "high", why: "Lab Day's West Coast edition — a second, smaller chance to meet US lab owners." },
+    { id: "rapid-tech-3d", year: 2027, name: "Rapid.Tech 3D", url: "https://www.rapidtech-3d.de/en", cat: "mfg", tag: "3D printing",
+      start: "2027-05-25", end: "2027-05-27", city: "Erfurt", country: "Germany", region: "Europe",
+      attendees: 1500, attendeesNote: "Not published", attendeesEst: true,
+      exhibitors: 52, exhibitorsNote: "2026 figure", exhibitorsEst: false,
+      audience: "German-speaking additive-manufacturing users, engineers and researchers",
+      fit: "watch", why: "Specialist congress plus expo; small, with an industrial and research focus." },
+    { id: "tct-asia", year: 2027, name: "TCT Asia", url: "https://en.tctasia.cn/", cat: "mfg", tag: "3D printing",
+      start: "2027-05-27", end: "2027-05-29", city: "Shanghai", country: "China", region: "Asia",
+      attendees: 44519, attendeesNote: "2026 figure", attendeesEst: false,
+      exhibitors: 550, exhibitorsNote: "2026 figure", exhibitorsEst: false,
+      audience: "Additive-manufacturing users, engineers and buyers across Asia-Pacific",
+      fit: "watch", why: "Asia's largest 3D printing show — a view of the Chinese printer makers Fyous competes with." },
+    { id: "aao", year: 2027, name: "AAO Annual Session", url: "https://annualsession.aaoinfo.org/", cat: "dental", tag: "Orthodontics",
+      start: "2027-06-04", end: "2027-06-06", city: "Vancouver", country: "Canada", region: "North America",
+      attendees: 10000, attendeesNote: "Expected, organiser figure", attendeesEst: false,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "Orthodontists and orthodontic staff — the American Association of Orthodontists' main meeting",
+      fit: "high", why: "Orthodontists prescribe aligners and the big aligner brands exhibit. Fyous attended in 2026; first time held in Canada." },
+    { id: "sino-dental", year: 2027, name: "Sino-Dental", url: "https://www.sinodent.com.cn/", cat: "dental", tag: "Dental trade show",
+      start: "2027-06-09", end: "2027-06-12", city: "Beijing", country: "China", region: "Asia",
+      attendees: 100000, attendeesNote: "Approximate, from trade listings", attendeesEst: true,
+      exhibitors: 900, exhibitorsNote: "2026 figure (900+)", exhibitorsEst: false,
+      audience: "China's dental industry: manufacturers, distributors, labs and dentists",
+      fit: "medium", why: "Northern China's major show; pairs with Dental South China for Asia market research." },
+    { id: "sidex", year: 2027, name: "SIDEX — Seoul International Dental Exhibition", url: "https://eng.sidex.or.kr/", cat: "dental", tag: "Dental trade show",
+      start: "2027-06-11", end: "2027-06-13", dateSub: "Congress 12–13 Jun", city: "Seoul", country: "South Korea", region: "Asia",
+      attendees: 20000, attendeesNote: "Total not published; 2,000+ international", attendeesEst: true,
+      exhibitors: 300, exhibitorsNote: "2027 plan (300+, 1,100 booths)", exhibitorsEst: false,
+      audience: "Korean and Asian dentists, dental manufacturers and dealers; strong digital-dentistry and orthodontics floor",
+      fit: "medium", why: "Korea is a hub for dental manufacturing and aligner-material makers — a good place to find partners." },
+    { id: "eos", year: 2027, name: "European Orthodontic Society Congress", url: "https://eoseurope.org/", cat: "dental", tag: "Orthodontics",
+      start: "2027-06-13", end: "2027-06-17", city: "Innsbruck", country: "Austria", region: "Europe",
+      attendees: 3000, attendeesNote: "Rough size, not published", attendeesEst: true,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "European orthodontists, orthodontic researchers and postgraduate students",
+      fit: "medium", why: "Europe's main orthodontic science meeting — aligner research and clinical opinion-leaders." },
+    { id: "adx-melbourne", year: 2027, name: "ADX Melbourne", url: "https://www.adx.melbourne/", cat: "dental", tag: "Dental trade show",
+      start: "2027-08-19", end: "2027-08-21", city: "Melbourne", country: "Australia", region: "Oceania",
+      attendees: 8000, attendeesNote: "Figure not published", attendeesEst: true,
+      exhibitors: 180, exhibitorsNote: "ADX Sydney 2024 (180+)", exhibitorsEst: true,
+      audience: "Australian dentists, practice owners, labs and dental suppliers — the Australian Dental Industry Association's expo",
+      fit: "watch", why: "Australia's main dental trade expo, held in an otherwise quiet August." },
+    { id: "formnext-asia", year: 2027, name: "Formnext Asia Shenzhen", url: "https://formnext-sz.hk.messefrankfurt.com/shenzhen/en.html", cat: "mfg", tag: "3D printing",
+      start: "2027-09-01", end: "2027-09-03", city: "Shenzhen", country: "China", region: "Asia",
+      attendees: 34202, attendeesNote: "2026 figure", attendeesEst: false,
+      exhibitors: 265, exhibitorsNote: "2025 figure", exhibitorsEst: false,
+      audience: "3D printing users, buyers and print-farm operators in South China's manufacturing hub — electronics, robotics, automotive",
+      fit: "watch", why: "Fast-growing AM show in China's electronics hub; a read on where low-cost volume 3D printing is heading." },
+    { id: "emo", year: 2027, name: "EMO Milano", url: "https://www.emo-milan.com/", cat: "mfg", tag: "Industrial",
+      start: "2027-10-04", end: "2027-10-08", city: "Milan", country: "Italy", region: "Europe",
+      attendees: 60000, attendeesNote: "Expected, organiser figure", attendeesEst: false,
+      exhibitors: 700, exhibitorsNote: "Expected (700+)", exhibitorsEst: false,
+      audience: "Machine-tool, metalworking and production engineers",
+      fit: "watch", why: "World machine-tool fair; relevant for precision actuation and mechanical suppliers." },
+    { id: "fakuma", year: 2027, name: "Fakuma", url: "https://www.fakuma-messe.de/en/", cat: "mfg", tag: "Plastics · moulding",
+      start: "2027-10-11", end: "2027-10-15", city: "Friedrichshafen", country: "Germany", region: "Europe",
+      attendees: 36675, attendeesNote: "2024 figure", attendeesEst: false,
+      exhibitors: 1639, exhibitorsNote: "2024 figure", exhibitorsEst: false,
+      audience: "Plastics processors, injection moulders, thermoformers and toolmakers",
+      fit: "medium", why: "Europe's leading plastics-processing fair — mould-making and thermoforming suppliers in one place." },
+    { id: "spe-thermoforming", year: 2027, name: "SPE Thermoforming Conference", url: "https://thermoformingdivision.com/", cat: "mfg", tag: "Plastics · thermoforming",
+      start: "2027-10-12", end: "2027-10-14", city: "St. Louis", country: "USA", region: "North America",
+      attendees: 250, attendeesNote: "2025 figure (250+)", attendeesEst: false,
+      exhibitors: null, exhibitorsNote: "Not published", exhibitorsEst: false,
+      audience: "Thermoforming engineers, processors, tooling makers and sheet/machine suppliers",
+      fit: "high", why: "Aligners are thermoformed over a mould — this is the specialist community for exactly that step." },
+    { id: "fdi", year: 2027, name: "FDI World Dental Congress", url: "https://2027.world-dental-congress.org/FDI", cat: "dental", tag: "Dental congress",
+      start: "2027-10-21", end: "2027-10-24", city: "Mumbai", country: "India", region: "Asia",
+      attendees: 30000, attendeesNote: "2025 figure (Shanghai)", attendeesEst: false,
+      exhibitors: 700, exhibitorsNote: "2025 figure (Shanghai)", exhibitorsEst: false,
+      audience: "Dentists, national dental associations, policy-makers and industry from around the world",
+      fit: "watch", why: "Global and policy-heavy; good for India market awareness rather than sales." },
+    { id: "formnext", year: 2027, name: "Formnext", url: "https://formnext.mesago.com/frankfurt/en.html", cat: "mfg", tag: "3D printing",
+      start: "2027-10-26", end: "2027-10-29", city: "Frankfurt", country: "Germany", region: "Europe",
+      attendees: 38282, attendeesNote: "2025 figure", attendeesEst: false,
+      exhibitors: 804, exhibitorsNote: "2025 figure", exhibitorsEst: false,
+      audience: "Additive-manufacturing engineers, production managers and buyers, including dental and medical AM",
+      fit: "high", why: "The world's leading AM show. Fyous is booked for the 2026 edition — this is the follow-up year." },
+    { id: "medica-compamed", year: 2027, name: "MEDICA + COMPAMED", url: "https://www.compamed-tradefair.com/", cat: "mfg", tag: "Medtech manufacturing",
+      start: "2027-11-15", end: "2027-11-18", city: "Düsseldorf", country: "Germany", region: "Europe",
+      attendees: 78000, attendeesNote: "2025 figure, both shows", attendeesEst: false,
+      exhibitors: 5584, exhibitorsNote: "2025 figure, both shows (COMPAMED 750)", exhibitorsEst: false,
+      audience: "Medical-technology manufacturers, component and contract-manufacturing suppliers, hospital buyers",
+      fit: "medium", why: "COMPAMED is the supplier side of medtech — materials, precision parts, manufacturing partners." },
+    { id: "gnydm", year: 2027, name: "Greater New York Dental Meeting", url: "https://www.gnydm.com/", cat: "dental", tag: "Dental congress",
+      start: "2027-11-26", end: "2027-11-30", dateSub: "Exhibition 28–30 Nov", city: "New York", country: "USA", region: "North America",
+      attendees: 32000, attendeesNote: "2025 registrants", attendeesEst: false,
+      exhibitors: 450, exhibitorsNote: "2025 figure (450+)", exhibitorsEst: false,
+      audience: "Dentists, dental teams, labs and international visitors",
+      fit: "medium", why: "One of the largest dental meetings in the US, with a big lab and digital-dentistry floor." },
+  ],
+};
+</script>
+<script id="fyous-app">
+(() => {
+  "use strict";
+
+  // Page layout.
+  const SHELL_HTML = `
+<div class="wrap">
+  <header>
+    <div>
+      <p class="eyebrow lbl">Fyous · trade shows &amp; conferences</p>
+      <h1>Event <span>Scout</span></h1>
+      <p class="lede">Which shows to attend, what they cost, and what we have to do before the doors open.</p>
+    </div>
+    <div><canvas class="pinfield" id="pinfield" aria-hidden="true"></canvas></div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <a href="#/y/2027" id="tab-2027">2027</a>
+    <a href="#/y/2026" id="tab-2026">2026</a>
+    <a href="#/todo" id="tab-todo">To do<span class="badge" id="todo-badge" hidden></span></a>
+    <a href="#/perf" id="tab-perf">Performance</a>
+    <span class="spacer"></span>
+    <span class="live-status" id="live-status" aria-live="polite" hidden></span>  </nav>
+  <div class="panel live-banner" id="live-banner" hidden></div>
+
+  <!-- ============================ YEAR VIEW ============================ -->
+  <section id="view-year" class="detail">
+    <p class="stats" id="stats"></p>
+
+    <section class="panel year" aria-labelledby="year-title">
+      <div class="row-head">
+        <h2 id="year-title">When they happen — pick a month to filter</h2>
+        <div class="legend"><span><i style="background:var(--dental)"></i>Dental &amp; orthodontic</span><span><i style="background:var(--mfg)"></i>Manufacturing &amp; 3D printing</span></div>
+      </div>
+      <div class="months" id="months"></div>
+    </section>
+
+    <section class="panel ask" id="ask" aria-labelledby="ask-title" hidden>
+      <div class="row-head">
+        <h2 id="ask-title">Ask Claude about this list</h2>
+        <p class="ask-note" id="ask-note">Answers use the event data on this page.</p>
+      </div>
+      <form id="ask-form">
+        <input type="search" id="ask-q" placeholder="e.g. Plan one European trip that covers the most high-fit events" autocomplete="off" maxlength="400">
+        <button class="btn" type="submit" id="ask-go">Ask</button>
+        <button class="btn ghost" type="button" id="ask-stop" hidden>Stop</button>
+      </form>
+      <div class="chips" id="ask-chips">
+        <button type="button" id="chip-1">Plan one trip that covers the most high-fit events</button>
+        <button type="button" id="chip-2">Which events clash, and which should we pick?</button>
+        <button type="button" id="chip-3">Best 3 events for meeting dental lab owners</button>
+        <button type="button" id="chip-4">Build a 2027 plan of four trips</button>
+      </div>
+      <div class="answer" id="ask-out" aria-live="polite" hidden></div>
+    </section>
+
+    <section class="controls" aria-label="Filter and sort">
+      <div class="field">
+        <label class="lbl" for="q">Search</label>
+        <input type="search" id="q" placeholder="Name, city, audience…" autocomplete="off">
+      </div>
+      <div class="field">
+        <span class="lbl" id="cat-lbl">Sector</span>
+        <div class="seg" role="group" aria-labelledby="cat-lbl" id="cat">
+          <button type="button" id="cat-all" data-v="all" aria-pressed="true">All</button>
+          <button type="button" id="cat-dental" data-v="dental" aria-pressed="false">Dental</button>
+          <button type="button" id="cat-mfg" data-v="mfg" aria-pressed="false">Manufacturing</button>
+        </div>
+      </div>
+      <div class="field">
+        <label class="lbl" for="region">Region</label>
+        <select id="region">
+          <option value="all">Anywhere</option>
+          <option>Europe</option>
+          <option>North America</option>
+          <option>Asia</option>
+          <option>Middle East</option>
+          <option>Latin America</option>
+          <option>Oceania</option>
+        </select>
+      </div>
+      <div class="field">
+        <label class="lbl" for="fit">Show</label>
+        <select id="fit">
+          <option value="all">Everything</option>
+          <option value="high">High fit only</option>
+          <option value="medium">High + medium fit</option>
+          <option value="tracked">Going or considering</option>
+        </select>
+      </div>
+      <button type="button" class="linkish" id="reset">Clear filters</button>
+      <div class="tools">
+        <span class="count" id="count" aria-live="polite"></span>
+        <button type="button" class="btn ghost" id="export" hidden>Export CSV</button>
+      </div>
+      <div class="claude-filter" id="claude-filter" hidden>
+        <span id="claude-filter-text"></span>
+        <button type="button" class="linkish" id="claude-filter-clear">Show all</button>
+      </div>
+    </section>
+
+    <div class="panel table-wrap" id="list-wrap">
+     <div class="table-box" tabindex="0" role="region" aria-label="Event table — scrolls sideways">
+      <table class="list">
+        <thead>
+          <tr>
+            <th scope="col" data-key="name" aria-sort="none"><button type="button" id="sort-name">Event <span class="arrow"></span></button></th>
+            <th scope="col" data-key="start" aria-sort="ascending"><button type="button" id="sort-start">Dates <span class="arrow"></span></button></th>
+            <th scope="col" data-key="city" aria-sort="none"><button type="button" id="sort-city">City, country <span class="arrow"></span></button></th>
+            <th scope="col" class="num" data-key="attendees" aria-sort="none"><button type="button" id="sort-attendees">Attendees <span class="arrow"></span></button></th>
+            <th scope="col" class="num" data-key="exhibitors" aria-sort="none"><button type="button" id="sort-exhibitors">Exhibitors <span class="arrow"></span></button></th>
+            <th scope="col"><span class="th">Who it's for</span></th>
+            <th scope="col" data-key="fit" aria-sort="none"><button type="button" id="sort-fit">Fyous fit <span class="arrow"></span></button></th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+     </div>
+      <div class="empty" id="empty" hidden></div>
+    </div>
+  </section>
+
+  <!-- ============================ EVENT DETAIL ============================ -->
+  <section id="view-event" class="detail" hidden></section>
+
+  <!-- ============================ PERFORMANCE ============================ -->
+  <section id="view-perf" class="detail" hidden></section>
+
+  <!-- ============================ TO DO ============================ -->
+  <section id="view-todo" class="detail" hidden>
+    <div>
+      <h2 style="font-size:22px">To do</h2>
+      <p class="lede">Every open task for the shows you've marked <strong>Going</strong>, soonest deadline first. Tick things off or delete them here, or open the show for its full checklist.</p>
+    </div>
+    <p class="todo-summary" id="todo-summary"></p>
+    <div class="todo-bar">
+      <div class="seg" role="group" aria-label="Which tasks" id="todo-mode">
+        <button type="button" id="todo-open" data-v="open" aria-pressed="true">Open</button>
+        <button type="button" id="todo-done" data-v="done" aria-pressed="false">Done</button>
+      </div>
+    </div>
+    <div class="detail" id="todo-list"></div>
+  </section>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden>
+    <span id="toast-text"></span>
+    <button type="button" id="toast-undo">Undo</button>
+  </div>
+
+  <footer>
+    <p><strong>Attendees</strong> are visitors or delegates; <strong>exhibitors</strong> are the companies with stands. Both are the most recent published figures — a final count, or the organiser's forecast where that's all there is (the note under each number says which). Anything tagged <span class="est" style="margin:0">est</span> is a rough guide, not a published figure.</p>
+    <p><strong>Fyous fit</strong> is a suggested priority based on how close each audience sits to pin-array moulding for dental aligners. <span id="footer-save"><strong>Checklists, budgets and statuses save in this browser</strong> — use Back up on the Performance tab to move them to another machine.</span></p>
+    <p id="checked">Dates checked against organiser sites. Confirm on the official site before booking travel.</p>
+  </footer>
+</div>
+`;
+  document.getElementById("app").innerHTML = SHELL_HTML;
+
+  const font = document.getElementById("fontcss");
+  if (font.sheet) font.media = "all"; else font.addEventListener("load", () => { font.media = "all"; });
+
+  const $ = (id) => document.getElementById(id);
+  const DATA = window.FYOUS_DATA || { checked: "", events: [] };
+  const EVENTS = DATA.events;
+  const YEARS = [...new Set(EVENTS.map((e) => e.year))].sort();
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const FIT_RANK = { high: 0, medium: 1, watch: 2 };
+  const FIT_LABEL = { high: "High", medium: "Medium", watch: "Watch" };
+  const DAY = 864e5;
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const fold = (s) => String(s).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const parse = (d) => new Date(d + "T00:00:00");
+  const num = (n) => Number(n).toLocaleString("en-GB");
+
+  /* ---------------- Tracker: statuses, checklists, budgets (this browser) ---------------- */
+  const KEY = "fyous-scout-tracker-v1";
+  const OLD_KEY = "fyous-scout-shortlist-v1";
+  const CURRENCIES = { GBP: "£", USD: "$", EUR: "€" };
+  // Default deadlines are rules of thumb: `before` = days before the show opens, `after` = days after it closes.
+  const DEFAULT_TASKS = [
+    { label: "Book the stand", before: 180 },
+    { label: "Confirm stand design & build", before: 90 },
+    { label: "Book accommodation", before: 90 },
+    { label: "Decide what equipment we're taking", before: 75 },
+    { label: "Book flights", before: 60 },
+    { label: "Book the carnet", before: 42 },
+    { label: "Arrange freight / shipping", before: 42 },
+    { label: "Order marketing collateral", before: 30 },
+    { label: "Brief the team & book meetings", before: 14 },
+    { label: "Post-show follow-up", after: 7 },
+  ];
+  const TEMPLATE_BY_LABEL = new Map(DEFAULT_TASKS.map((t) => [t.label, t]));
+  const DEFAULT_BUDGET = [
+    "Stand space", "Stand build & furniture", "Equipment & freight", "Carnet", "Flights",
+    "Accommodation", "Food & local travel", "Marketing collateral", "Other",
+  ];
+  const STATUS_LABEL = { going: "Going", considering: "Considering", no: "Not going", attended: "Attended", booked: "Booked" };
+
+  // Where the plan lives:
+  //  "shared" — the Fyous website: statuses, checklists, budgets and notes are in a shared online database,
+  //             so everyone with the link edits the same plan and sees each other's changes within seconds.
+  //  "local"  — a copy opened without the database settings: edits save in this browser only.
+  const CONFIG = window.FYOUS_CONFIG || {};
+  const SHARED = !!(CONFIG.supabaseUrl && CONFIG.supabaseKey && window.supabase && typeof window.supabase.createClient === "function");
+
+  function normaliseTrack(t) {
+    t = t && typeof t === "object" ? t : {};
+    t.settings = t.settings && typeof t.settings === "object" ? t.settings : { currency: "GBP" };
+    if (!CURRENCIES[t.settings.currency]) t.settings.currency = "GBP";
+    t.events = t.events && typeof t.events === "object" ? t.events : {};
+    // "Booked" was once copied into records automatically from the 2026 history; it isn't a choice
+    // anyone makes on the page, so fall back to the history instead of treating it as a status.
+    for (const r of Object.values(t.events)) if (r && r.status === "booked") delete r.status;
+    return t;
+  }
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const hasPlan = (t) => !!(t && t.events && Object.keys(t.events).length);
+
+  function readLocalTracker() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (raw) return normaliseTrack(JSON.parse(raw));
+      const old = JSON.parse(localStorage.getItem(OLD_KEY) || "[]"); // shortlist from an early version
+      if (old.length) {
+        const t = normaliseTrack({});
+        for (const id of old) t.events[id] = { status: "considering" };
+        return t;
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  let mode = SHARED ? "shared" : "local";
+  let track = SHARED ? normaliseTrack({}) : (readLocalTracker() || normaliseTrack({}));
+
+  let localSaveTimer;
+  // Every change to the plan goes through here.
+  function save() {
+    if (mode === "local") {
+      clearTimeout(localSaveTimer);
+      localSaveTimer = setTimeout(() => {
+        try { localStorage.setItem(KEY, JSON.stringify(track)); } catch (_) {}
+      }, 150);
+      return;
+    }
+    noteLocalChanges();
+    scheduleSync();
+  }
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  function rec(id) {
+    const before = track.events[id] ? JSON.stringify(track.events[id]) : undefined;
+    // A new record never copies the 2026 history into its status — status is only what the user picks.
+    if (!track.events[id]) track.events[id] = { status: "" };
+    const r = track.events[id];
+    if (!r.tasks) r.tasks = DEFAULT_TASKS.map((t) => ({ id: uid(), label: t.label, done: false, before: t.before, after: t.after }));
+    // Tasks saved before deadlines existed pick up the default deadline for their label.
+    for (const t of r.tasks) {
+      const tpl = TEMPLATE_BY_LABEL.get(t.label);
+      if (tpl && t.before == null && t.after == null && t.due == null) { t.before = tpl.before; t.after = tpl.after; }
+    }
+    if (!r.budget) r.budget = DEFAULT_BUDGET.map((label) => ({ id: uid(), label, planned: null, actual: null }));
+    if (r.notes == null) r.notes = "";
+    // Filling in the default checklist and budget isn't a change anyone made, so it isn't saved on its own.
+    if (!userDirty.has(id) && baseline.get(id) === before) baseline.set(id, JSON.stringify(r));
+    return r;
+  }
+  // Status without creating a record (used by the list and the charts).
+  function statusOf(id) {
+    const r = track.events[id];
+    if (r && r.status) return r.status;
+    const e = byId.get(id);
+    return e && e.fyous ? e.fyous : "";
+  }
+  const isTracked = (id) => ["going", "considering", "attended", "booked"].includes(statusOf(id));
+  // Checklists only exist for shows the user has explicitly marked Going (not history defaults like "Booked").
+  const hasChecklist = (id) => (track.events[id] || {}).status === "going";
+
+  /* ---------------- Task deadlines ---------------- */
+  // A task's deadline: a date the user set (`due`, "" = deliberately none), else the template rule.
+  function dueOf(t, e) {
+    if (t.due === "") return null;
+    if (t.due) return parse(t.due);
+    if (t.before != null) { const d = new Date(e.s); d.setDate(d.getDate() - t.before); return d; }
+    if (t.after != null) { const d = new Date(e.e); d.setDate(d.getDate() + t.after); return d; }
+    return null;
+  }
+  const isoDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  function dueText(d, done) {
+    if (!d) return "No deadline";
+    const days = Math.round((d - today) / DAY);
+    const date = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", ...(d.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}) });
+    if (done) return `Due ${date}`;
+    if (days < -1) return `${-days} days overdue · ${date}`;
+    if (days === -1) return `1 day overdue · ${date}`;
+    if (days === 0) return "Due today";
+    if (days === 1) return "Due tomorrow";
+    if (days < 14) return `Due in ${days} days · ${date}`;
+    return `Due ${date}`;
+  }
+  const dueClass = (d, done) => (done || !d ? "" : d < today ? "overdue" : (d - today) / DAY <= 7 ? "soon" : "");
+  // Open/overdue counts for one event, using its tasks (creating the default checklist if needed).
+  function taskStats(id) {
+    const e = byId.get(id), r = rec(id);
+    let open = 0, overdue = 0, soon = 0;
+    for (const t of r.tasks) {
+      if (t.done) continue;
+      open++;
+      const d = dueOf(t, e);
+      if (d && d < today) overdue++;
+      else if (d && (d - today) / DAY <= 7) soon++;
+    }
+    return { open, overdue, soon, total: r.tasks.length, done: r.tasks.length - open };
+  }
+  function totals(id) {
+    const r = track.events[id];
+    if (!r || !r.budget) return { planned: 0, actual: 0 };
+    return r.budget.reduce((t, b) => ({ planned: t.planned + (+b.planned || 0), actual: t.actual + (+b.actual || 0) }), { planned: 0, actual: 0 });
+  }
+  const money = (n) => CURRENCIES[track.settings.currency] + Math.round(n).toLocaleString("en-GB");
+
+  /* ---------------- Derived event fields ---------------- */
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const byId = new Map();
+  for (const e of EVENTS) {
+    e.s = parse(e.start); e.e = parse(e.end);
+    e.month = e.s.getMonth();
+    e.hay = fold(`${e.name} ${e.city} ${e.country} ${e.region} ${e.audience} ${e.tag}`);
+    byId.set(e.id, e);
+  }
+  for (const e of EVENTS) {
+    const overlapping = EVENTS.filter((o) => o !== e && o.year === e.year && o.s <= e.e && o.e >= e.s);
+    e.sameTrip = overlapping.filter((o) => o.city === e.city);
+    e.clashes = e.fit === "watch" ? [] : overlapping.filter((o) => o.city !== e.city && o.fit !== "watch");
+  }
+
+  function relative(e) {
+    const d = Math.round((e.s - today) / DAY);
+    if (e.e < today) return "finished";
+    if (d <= 0) return "on now";
+    if (d < 14) return `in ${d} day${d === 1 ? "" : "s"}`;
+    if (d < 60) return `in ${Math.round(d / 7)} weeks`;
+    return `in ${Math.round(d / 30.44)} months`;
+  }
+  function rangeText(e) {
+    const sm = e.s.getMonth(), em = e.e.getMonth();
+    if (+e.s === +e.e) return `${e.s.getDate()} ${MONTHS[sm]}`;
+    return sm === em
+      ? `${e.s.getDate()}–${e.e.getDate()} ${MONTHS[sm]}`
+      : `${e.s.getDate()} ${MONTHS[sm]} – ${e.e.getDate()} ${MONTHS[em]}`;
+  }
+  const ymd = (d) => `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`;
+  function calendarUrl(e) {
+    const p = new URLSearchParams({
+      action: "TEMPLATE", text: e.name,
+      dates: `${ymd(e.s)}/${ymd(new Date(e.e.getTime() + DAY))}`,
+      location: `${e.city}, ${e.country}`,
+      details: `${e.url}\nFyous fit: ${FIT_LABEL[e.fit]} — ${e.why}`,
+    });
+    return `https://calendar.google.com/calendar/render?${p}`;
+  }
+  function figure(n, note, est) {
+    if (n == null) return `<span class="none">—</span><span class="sub">${esc(note || "Not published")}</span>`;
+    const tag = est ? `<span class="est" title="Not a published figure — rough guide only">est</span>` : "";
+    return `<span class="mono big">${est ? "~" : ""}${num(n)}</span>${tag}<span class="sub">${esc(note || "")}</span>`;
+  }
+
+  /* ---------------- Rows (built once, reordered on filter/sort) ---------------- */
+  const rowEl = new Map();
+  (function buildRows() {
+    const html = EVENTS.map((e) => {
+      const names = (list) => list.map((c) => esc(c.name)).join(", ");
+      const trip =
+        (e.sameTrip.length ? `<span class="sub same">Same trip: ${names(e.sameTrip)}</span>` : "") +
+        (e.clashes.length ? `<span class="sub clash">Clashes with ${names(e.clashes)}</span>` : "");
+      return `<tr data-id="${e.id}">
+        <td class="ev-cell"><div class="ev">
+          <a class="open" href="#/e/${e.id}">${esc(e.name)}<span class="go">›</span></a>
+          <div class="badges">
+            <span class="chip ${e.cat}">${esc(e.tag)}</span>
+            <span class="chip status" data-status hidden></span>
+            <span class="chip warn" data-overdue hidden></span>
+          </div>
+        </div></td>
+        <td class="mono dates" data-label="Dates">${rangeText(e)}
+          <span class="sub" data-rel></span>${trip}
+        </td>
+        <td class="loc" data-label="City, country"><strong>${esc(e.city)}</strong><span class="sub">${esc(e.country)}</span></td>
+        <td class="num-cell" data-label="Attendees">${figure(e.attendees, e.attendeesNote, e.attendeesEst)}</td>
+        <td class="num-cell" data-label="Exhibitors">${figure(e.exhibitors, e.exhibitorsNote, e.exhibitorsEst)}</td>
+        <td class="aud" data-label="Who it's for">${esc(e.audience)}</td>
+        <td class="fit" data-label="Fyous fit"><span class="pill ${e.fit}"><i><b></b><b></b><b></b></i>${FIT_LABEL[e.fit]}</span><p>${esc(e.why)}</p></td>
+      </tr>`;
+    }).join("");
+    const holder = document.createElement("tbody");
+    holder.innerHTML = html;
+    for (const tr of [...holder.children]) {
+      rowEl.set(tr.dataset.id, tr);
+      const e = byId.get(tr.dataset.id);
+      tr.querySelector("[data-rel]").textContent =
+        `${e.dateSub || (+e.s === +e.e ? e.s.toLocaleDateString("en-GB", { weekday: "long" }) : e.s.toLocaleDateString("en-GB", { weekday: "short" }) + "–" + e.e.toLocaleDateString("en-GB", { weekday: "short" }))} · ${relative(e)}`;
+    }
+  })();
+
+  function paintStatus(id) {
+    const tr = rowEl.get(id);
+    if (!tr) return;
+    const s = statusOf(id);
+    const chip = tr.querySelector("[data-status]");
+    chip.hidden = !s;
+    chip.textContent = STATUS_LABEL[s] || "";
+    chip.className = `chip status ${s}`;
+    tr.classList.toggle("tracked", isTracked(id));
+    const warn = tr.querySelector("[data-overdue]");
+    const overdue = hasChecklist(id) ? taskStats(id).overdue : 0;
+    warn.hidden = !overdue;
+    warn.textContent = `${overdue} overdue`;
+  }
+
+  const monthBtns = MONTHS.map((m, i) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "month"; b.id = `month-${i}`; b.dataset.m = i;
+    b.innerHTML = `<div class="stack"></div><span>${m}</span>`;
+    $("months").append(b);
+    return b;
+  });
+
+  /* ---------------- List state ---------------- */
+  const DEFAULTS = { q: "", cat: "all", region: "all", fit: "all", month: null, sort: "start", dir: 1, only: null };
+  const state = Object.assign({ year: YEARS[YEARS.length - 1] }, DEFAULTS);
+
+  function matches(e, ignoreMonth) {
+    if (e.year !== state.year) return false;
+    if (state.only && !state.only.has(e.id)) return false;
+    if (state.cat !== "all" && e.cat !== state.cat) return false;
+    if (state.region !== "all" && e.region !== state.region) return false;
+    if (state.fit === "high" && e.fit !== "high") return false;
+    if (state.fit === "medium" && e.fit === "watch") return false;
+    if (state.fit === "tracked" && !isTracked(e.id)) return false;
+    if (!ignoreMonth && state.month !== null && e.month !== state.month) return false;
+    if (state.q && !state.q.every((t) => e.hay.includes(t))) return false;
+    return true;
+  }
+  const cmp = {
+    start: (a, b) => a.s - b.s || a.name.localeCompare(b.name),
+    name: (a, b) => a.name.localeCompare(b.name),
+    city: (a, b) => a.city.localeCompare(b.city),
+    attendees: (a, b) => (a.attendees ?? -1) - (b.attendees ?? -1),
+    exhibitors: (a, b) => (a.exhibitors ?? -1) - (b.exhibitors ?? -1),
+    fit: (a, b) => FIT_RANK[a.fit] - FIT_RANK[b.fit] || a.s - b.s,
+  };
+
+  let lastVisible = [];
+  function renderList() {
+    const yearEvents = EVENTS.filter((e) => e.year === state.year);
+    const pool = yearEvents.filter((e) => matches(e, true));
+    const visible = pool.filter((e) => state.month === null || e.month === state.month);
+    visible.sort((a, b) => cmp[state.sort](a, b) * state.dir);
+    lastVisible = visible;
+
+    for (const e of visible) paintStatus(e.id);
+    $("rows").replaceChildren(...visible.map((e) => rowEl.get(e.id)));
+    $("empty").hidden = visible.length > 0;
+    $("empty").textContent = state.fit === "tracked"
+      ? "Nothing marked Going or Considering yet. Open an event and set its status."
+      : "No events match those filters. Clear a filter or pick a different month.";
+    $("count").textContent = `${visible.length} of ${yearEvents.length} events${state.month !== null ? ` in ${MONTHS[state.month]}` : ""}`;
+
+    const inPool = new Set(pool.map((e) => e.id));
+    monthBtns.forEach((b, i) => {
+      const list = yearEvents.filter((e) => e.month === i).sort((a, c) => (a.cat === c.cat ? a.s - c.s : a.cat === "dental" ? -1 : 1));
+      const shown = list.filter((e) => inPool.has(e.id)).length;
+      b.firstElementChild.innerHTML = list.map((e) => `<b class="${e.cat}${inPool.has(e.id) ? "" : " dim"}"></b>`).join("");
+      b.setAttribute("aria-pressed", state.month === i);
+      const label = `${MONTHS[i]}: ${shown} event${shown === 1 ? "" : "s"}`;
+      b.setAttribute("aria-label", label); b.title = label;
+    });
+    document.querySelectorAll("thead th[data-key]").forEach((th) => {
+      th.setAttribute("aria-sort", th.dataset.key === state.sort ? (state.dir === 1 ? "ascending" : "descending") : "none");
+    });
+    $("claude-filter").hidden = !state.only;
+    renderStats();
+    refreshHScroll();
+  }
+
+  function renderStats() {
+    const list = EVENTS.filter((e) => e.year === state.year);
+    const dental = list.filter((e) => e.cat === "dental").length;
+    const high = list.filter((e) => e.fit === "high").length;
+    const count = (s) => list.filter((e) => statusOf(e.id) === s).length;
+    const committed = ["attended", "booked", "going"].map((s) => [s, count(s)]).filter(([, n]) => n);
+    const considering = count("considering");
+    const upcoming = list.filter((e) => e.e >= today).sort((a, b) => a.s - b.s)[0];
+    $("stats").innerHTML =
+      `<span><b>${list.length}</b> events in ${state.year}</span>` +
+      `<span><b>${dental}</b> dental · <b>${list.length - dental}</b> manufacturing</span>` +
+      `<span><b>${high}</b> high fit</span>` +
+      `<span>${committed.length ? committed.map(([s, n]) => `<b>${n}</b> ${STATUS_LABEL[s].toLowerCase()}`).join(" · ") : "<b>0</b> committed"}${considering ? ` · <b>${considering}</b> considering` : ""}</span>` +
+      (upcoming ? `<span>Next up: <b>${esc(upcoming.name)}</b>, ${rangeText(upcoming)} (${relative(upcoming)})</span>` : "");
+  }
+
+  /* ---------------- Event detail ---------------- */
+  let currentId = null;
+  function renderEvent(id) {
+    const e = byId.get(id);
+    const box = $("view-event");
+    if (!e) { box.innerHTML = `<p>Event not found. <a href="#/y/${state.year}">Back to the list</a></p>`; return; }
+    currentId = id;
+    const r = rec(id);
+    const cur = CURRENCIES[track.settings.currency];
+    const upcoming = e.e >= today;
+    const statuses = upcoming ? ["going", "considering", "no"] : ["attended", "no"];
+
+    box.innerHTML = `
+      <a class="back" href="#/y/${e.year}">← All ${e.year} events</a>
+      <div class="detail-head">
+        <h2>${esc(e.name)}</h2>
+        <div class="detail-meta">
+          <span><b>${rangeText(e)} ${e.year}</b> · ${esc(relative(e))}</span>
+          <span><b>${esc(e.city)}</b>, ${esc(e.country)}</span>
+          <span class="chip ${e.cat}">${esc(e.tag)}</span>
+          <span class="pill ${e.fit}"><i><b></b><b></b><b></b></i>${FIT_LABEL[e.fit]} fit</span>
+          <a href="${esc(e.url)}" target="_blank" rel="noopener">Official site ↗</a>
+          <a href="${esc(calendarUrl(e))}" target="_blank" rel="noopener">Add to calendar ↗</a>
+        </div>
+        <div class="status-row">
+          <span class="lbl">Status</span>
+          <div class="seg" role="group" aria-label="Status" id="status-seg">
+            ${statuses.map((s) => `<button type="button" data-s="${s}" aria-pressed="${statusOf(id) === s}">${STATUS_LABEL[s]}</button>`).join("")}
+          </div>
+          <span class="saved" id="save-note"></span>
+        </div>
+        <p class="sub" id="history-hint" style="margin:0" hidden>Fyous's 2026 history lists this show as booked. Tick <strong>Going</strong> to start its checklist.</p>
+      </div>
+
+      <div class="panel card">
+        <h2>What this show is</h2>
+        <div class="facts">
+          <div class="fact"><span class="lbl">Attendees</span><span>${figure(e.attendees, e.attendeesNote, e.attendeesEst)}</span></div>
+          <div class="fact"><span class="lbl">Exhibitors</span><span>${figure(e.exhibitors, e.exhibitorsNote, e.exhibitorsEst)}</span></div>
+          <div class="fact"><span class="lbl">Dates</span><b>${rangeText(e)}</b><span class="sub">${esc(e.dateSub || "")}</span></div>
+          <div class="fact"><span class="lbl">Where</span><b>${esc(e.city)}</b><span class="sub">${esc(e.country)}</span></div>
+        </div>
+        <p class="prose"><strong>Who it's for:</strong> ${esc(e.audience)}</p>
+        <p class="prose"><strong>Why it matters to Fyous:</strong> ${esc(e.why)}</p>
+        ${e.sameTrip.length ? `<p class="prose same">Same trip: ${e.sameTrip.map((c) => `<a href="#/e/${c.id}">${esc(c.name)}</a>`).join(", ")}</p>` : ""}
+        ${e.clashes.length ? `<p class="prose clash">Clashes with ${e.clashes.map((c) => `<a href="#/e/${c.id}">${esc(c.name)}</a>`).join(", ")}</p>` : ""}
+      </div>
+
+      <div class="cols">
+        <div class="panel card">
+          <div class="row-head">
+            <h2>Checklist</h2>
+            <span class="count" id="task-count"></span>
+          </div>
+          <div class="checklist-off" id="checklist-off">
+            <p class="prose">${upcoming
+              ? "The checklist appears once you mark this show <strong>Going</strong>. Its tasks then show up on the To do tab too."
+              : "This show has finished. Checklists are only kept for shows marked <strong>Going</strong>."}</p>
+            ${upcoming ? `<button class="btn" type="button" id="make-going">Mark as Going</button>` : ""}
+            <p class="sub" style="margin:0">Changing a show away from Going hides its checklist without deleting anything — mark it Going again and the tasks come back.</p>
+          </div>
+          <div class="checklist-on" id="checklist-on">
+            <div class="progress"><i id="task-bar" style="width:0%"></i></div>
+            <ul class="tasks" id="tasks"></ul>
+            <form class="add-row" id="add-task">
+              <input type="text" id="new-task" placeholder="Add a task…" maxlength="120" aria-label="New task">
+              <input type="date" id="new-task-due" aria-label="Deadline for new task">
+              <button class="btn ghost" type="submit">Add</button>
+            </form>
+            <p class="sub" style="margin:0">Default deadlines are rules of thumb counted back from the show dates — change any of them to suit. Use × to delete a task.</p>
+          </div>
+        </div>
+
+        <div class="panel card">
+          <div class="row-head">
+            <h2>Budget</h2>
+            <label class="lbl">Currency
+              <select id="currency" aria-label="Currency">
+                ${Object.keys(CURRENCIES).map((c) => `<option value="${c}" ${track.settings.currency === c ? "selected" : ""}>${CURRENCIES[c]} ${c}</option>`).join("")}
+              </select>
+            </label>
+          </div>
+          <table class="budget">
+            <thead><tr><th>Item</th><th class="r">Planned (${cur})</th><th class="r">Actual (${cur})</th><th></th></tr></thead>
+            <tbody id="budget-rows"></tbody>
+            <tfoot>
+              <tr><td>Total</td><td class="r mono" id="tot-planned">0</td><td class="r mono" id="tot-actual">0</td><td></td></tr>
+              <tr><td colspan="4" class="sub" id="variance"></td></tr>
+            </tfoot>
+          </table>
+          <form class="add-row" id="add-budget">
+            <input type="text" id="new-budget" placeholder="Add a cost line…" maxlength="120" aria-label="New budget line">
+            <button class="btn ghost" type="submit">Add</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel card">
+        <h2>Notes</h2>
+        <textarea id="notes" placeholder="Stand number, who's going, leads to follow up, what worked…">${esc(r.notes)}</textarea>
+      </div>`;
+
+    renderBudget();
+    syncChecklist();
+
+    function setStatus(s) {
+      r.status = s;
+      save(); flash("Saved"); paintStatus(id); renderStats(); updateTodoBadge();
+      syncChecklist();
+    }
+    // Show the checklist only when the user has marked the show Going.
+    function syncChecklist() {
+      const on = hasChecklist(id);
+      $("checklist-on").hidden = !on;
+      $("checklist-off").hidden = on;
+      $("history-hint").hidden = !(e.fyous === "booked" && !r.status && upcoming);
+      $("status-seg").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.s === statusOf(id)));
+      if (on) renderTasks();
+      else $("task-count").textContent = "";
+    }
+    $("status-seg").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button"); if (!b) return;
+      setStatus(r.status === b.dataset.s ? "" : b.dataset.s);
+    });
+    if ($("make-going")) $("make-going").addEventListener("click", () => setStatus("going"));
+    $("add-task").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const v = $("new-task").value.trim(); if (!v) return;
+      r.tasks.push({ id: uid(), label: v, done: false, due: $("new-task-due").value || "" });
+      $("new-task").value = ""; $("new-task-due").value = ""; save(); renderTasks(); updateTodoBadge();
+    });
+    $("tasks").addEventListener("change", (ev) => {
+      const cb = ev.target.closest("input[type=checkbox]");
+      const dateInput = ev.target.closest("input[type=date]");
+      const t = r.tasks.find((t) => t.id === (cb || dateInput || {}).dataset?.t); if (!t) return;
+      if (cb) t.done = cb.checked;
+      if (dateInput) t.due = dateInput.value; // "" means no deadline
+      save(); flash("Saved"); renderTasks(); updateTodoBadge();
+    });
+    $("tasks").addEventListener("click", (ev) => {
+      const del = ev.target.closest("[data-del]"); if (!del) return;
+      deleteTask(id, del.dataset.del, renderTasks);
+    });
+    $("add-budget").addEventListener("submit", (ev) => {
+      ev.preventDefault();
+      const v = $("new-budget").value.trim(); if (!v) return;
+      r.budget.push({ id: uid(), label: v, planned: null, actual: null });
+      $("new-budget").value = ""; save(); renderBudget();
+    });
+    $("budget-rows").addEventListener("input", (ev) => {
+      const el = ev.target.closest("[data-b]"); if (!el) return;
+      const row = r.budget.find((b) => b.id === el.dataset.b); if (!row) return;
+      if (el.dataset.f === "label") row.label = el.value;
+      else row[el.dataset.f] = el.value === "" ? null : Number(el.value);
+      save(); budgetTotals(); flash("Saved");
+    });
+    $("budget-rows").addEventListener("click", (ev) => {
+      const del = ev.target.closest("[data-del]"); if (!del) return;
+      r.budget = r.budget.filter((b) => b.id !== del.dataset.del); save(); renderBudget();
+    });
+    $("currency").addEventListener("change", (ev) => {
+      track.settings.currency = ev.target.value; save(); renderEvent(id);
+    });
+    $("notes").addEventListener("input", (ev) => { r.notes = ev.target.value; save(); flash("Saved"); });
+
+    function renderTasks() {
+      const done = r.tasks.filter((t) => t.done).length;
+      const overdue = r.tasks.filter((t) => !t.done && dueClass(dueOf(t, e), false) === "overdue").length;
+      // Chronological order; undated tasks last. Ticking a task doesn't move it.
+      const ordered = r.tasks.slice().sort((a, b) => (dueOf(a, e) ?? Infinity) - (dueOf(b, e) ?? Infinity));
+      $("tasks").innerHTML = ordered.map((t) => {
+        const d = dueOf(t, e);
+        return `
+        <li class="${t.done ? "done" : ""}">
+          <input type="checkbox" id="t-${t.id}" data-t="${t.id}" ${t.done ? "checked" : ""}>
+          <div class="task-text">
+            <label for="t-${t.id}">${esc(t.label)}</label>
+            <span class="due ${dueClass(d, t.done)}">${esc(dueText(d, t.done))}</span>
+          </div>
+          <input type="date" class="due-input" data-t="${t.id}" value="${d ? isoDate(d) : ""}" aria-label="Deadline for ${esc(t.label)}">
+          <button class="del" type="button" data-del="${t.id}" aria-label="Delete task: ${esc(t.label)}" title="Delete task">×</button>
+        </li>`;
+      }).join("");
+      $("task-count").textContent = `${done} of ${r.tasks.length} done${overdue ? ` · ${overdue} overdue` : ""}`;
+      $("task-bar").style.width = r.tasks.length ? `${Math.round((done / r.tasks.length) * 100)}%` : "0%";
+    }
+    function renderBudget() {
+      $("budget-rows").innerHTML = r.budget.map((b) => `
+        <tr>
+          <td><input type="text" value="${esc(b.label)}" data-b="${b.id}" data-f="label" aria-label="Item"></td>
+          <td class="r"><input type="number" min="0" step="1" value="${b.planned ?? ""}" data-b="${b.id}" data-f="planned" aria-label="Planned"></td>
+          <td class="r"><input type="number" min="0" step="1" value="${b.actual ?? ""}" data-b="${b.id}" data-f="actual" aria-label="Actual"></td>
+          <td><button class="del" type="button" data-del="${b.id}" aria-label="Delete line">×</button></td>
+        </tr>`).join("");
+      budgetTotals();
+    }
+    function budgetTotals() {
+      const t = totals(id);
+      $("tot-planned").textContent = money(t.planned);
+      $("tot-actual").textContent = money(t.actual);
+      const el = $("variance");
+      if (!t.planned && !t.actual) { el.textContent = "Add planned costs to track this show against budget."; el.className = "sub"; return; }
+      const diff = t.actual - t.planned;
+      const linesPlanned = r.budget.filter((b) => +b.planned > 0).length;
+      const linesActual = r.budget.filter((b) => +b.actual > 0).length;
+      // Only call it over/under once every planned line has an actual against it.
+      const settled = t.actual && linesActual >= linesPlanned;
+      el.textContent = !t.actual ? `Planned ${money(t.planned)}; no actuals entered yet.`
+        : !settled ? `${money(t.actual)} spent of ${money(t.planned)} planned — ${linesActual} of ${linesPlanned} lines have actuals.`
+        : diff === 0 ? "Exactly on budget."
+        : diff > 0 ? `${money(diff)} over budget.` : `${money(-diff)} under budget.`;
+      el.className = "sub variance " + (settled && diff > 0 ? "over" : settled && diff < 0 ? "under" : "");
+    }
+  }
+  let flashTimer;
+  function flash(msg) {
+    const el = $("save-note"); if (!el) return;
+    el.textContent = msg; clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => { el.textContent = ""; }, 1200);
+  }
+
+  /* ---------------- Performance ---------------- */
+  function renderPerf() {
+    const rows = [];
+    const perYear = YEARS.map((y) => {
+      const list = EVENTS.filter((e) => e.year === y);
+      const committed = list.filter((e) => ["going", "attended", "booked"].includes(statusOf(e.id)));
+      const attended = committed.filter((e) => statusOf(e.id) === "attended");
+      const booked = committed.filter((e) => statusOf(e.id) !== "attended");
+      const spend = committed.reduce((t, e) => {
+        const x = totals(e.id); return { planned: t.planned + x.planned, actual: t.actual + x.actual };
+      }, { planned: 0, actual: 0 });
+      const reach = committed.reduce((t, e) => t + (e.attendees || 0), 0);
+      const reachEst = committed.some((e) => e.attendeesEst || e.attendees == null);
+      return { y, list, committed, attended: attended.length, booked: booked.length, spend, reach, reachEst };
+    });
+    const maxCount = Math.max(1, ...perYear.map((p) => p.committed.length));
+    const thisYear = perYear.find((p) => p.y === today.getFullYear()) || perYear[0];
+    const nextYear = perYear.find((p) => p.y === today.getFullYear() + 1) || perYear[perYear.length - 1];
+
+    for (const p of perYear) {
+      rows.push(`<tr class="yr"><td colspan="7">${p.y} — ${p.committed.length} event${p.committed.length === 1 ? "" : "s"} committed</td></tr>`);
+      if (!p.committed.length) rows.push(`<tr><td colspan="7" class="sub">Nothing marked Going yet. Open an event and set its status to count it here.</td></tr>`);
+      for (const e of p.committed.sort((a, b) => a.s - b.s)) {
+        const t = totals(e.id);
+        // Only shows marked Going have a checklist.
+        const r2 = hasChecklist(e.id) ? rec(e.id) : null;
+        const doneTasks = r2 && r2.tasks ? r2.tasks.filter((t2) => t2.done).length : 0;
+        const allTasks = r2 && r2.tasks ? r2.tasks.length : 0;
+        rows.push(`<tr>
+          <td><a href="#/e/${e.id}">${esc(e.name)}</a></td>
+          <td class="mono">${rangeText(e)}</td>
+          <td>${esc(e.city)}</td>
+          <td>${STATUS_LABEL[statusOf(e.id)] || "—"}</td>
+          <td class="r mono">${t.planned ? money(t.planned) : "—"}</td>
+          <td class="r mono">${t.actual ? money(t.actual) : "—"}</td>
+          <td class="r mono">${allTasks ? `${doneTasks}/${allTasks}` : "—"}${hasChecklist(e.id) && taskStats(e.id).overdue ? ` <span class="due overdue">· ${taskStats(e.id).overdue} overdue</span>` : ""}</td>
+        </tr>`);
+      }
+    }
+
+    const barH = 26, gap = 14, chartH = perYear.length * (barH + gap) + 24, chartW = 560;
+    const bars = perYear.map((p, i) => {
+      const y = i * (barH + gap) + 8;
+      const w = (p.committed.length / maxCount) * (chartW - 150);
+      const attW = (p.attended / maxCount) * (chartW - 150);
+      return `
+        <text x="0" y="${y + barH * 0.7}" font-size="13" font-family="var(--font-mono)" fill="var(--ink)">${p.y}</text>
+        <rect x="46" y="${y}" width="${Math.max(w, 1)}" height="${barH}" rx="3" fill="var(--rule)"></rect>
+        <rect x="46" y="${y}" width="${Math.max(attW, 0)}" height="${barH}" rx="3" fill="var(--dental)"></rect>
+        <text x="${46 + Math.max(w, 1) + 10}" y="${y + barH * 0.7}" font-size="13" fill="var(--muted)">${p.committed.length} event${p.committed.length === 1 ? "" : "s"}${p.attended ? ` · ${p.attended} attended` : ""}</text>`;
+    }).join("");
+
+    $("view-perf").innerHTML = `
+      <div>
+        <h2 style="font-size:22px">Marketing scoreboard</h2>
+        <p class="lede">Events committed to per year, what they cost, and how far the prep has got. Counts everything marked Attended, Booked or Going.</p>
+      </div>
+      <div class="tiles">
+        <div class="panel tile"><span class="lbl">Events in ${thisYear.y}</span><b>${thisYear.committed.length}</b><span class="sub">${thisYear.attended} attended · ${thisYear.booked} booked</span></div>
+        <div class="panel tile"><span class="lbl">Events planned ${nextYear.y}</span><b>${nextYear.committed.length}</b><span class="sub">of ${nextYear.list.length} tracked</span></div>
+        <div class="panel tile"><span class="lbl">Spend ${thisYear.y}</span><b>${money(thisYear.spend.actual || thisYear.spend.planned)}</b><span class="sub">${thisYear.spend.actual ? "actual to date" : "planned; no actuals yet"}</span></div>
+        <div class="panel tile"><span class="lbl">Budget ${nextYear.y}</span><b>${money(nextYear.spend.planned)}</b><span class="sub">planned across ${nextYear.committed.length} event${nextYear.committed.length === 1 ? "" : "s"}</span></div>
+        <div class="panel tile"><span class="lbl">Audience reached ${thisYear.y}</span><b>${num(thisYear.reach)}</b><span class="sub">total attendees at those shows${thisYear.reachEst ? "; includes estimates" : ""}</span></div>
+        <div class="panel tile"><span class="lbl">Event data verified</span><b style="font-size:19px">${DATA.checked ? parse(DATA.checked).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}</b><span class="sub">re-checked against organiser sites every Monday</span></div>
+      </div>
+
+      <div class="panel card">
+        <h2>Events per year</h2>
+        <svg class="chart" viewBox="0 0 ${chartW} ${chartH}" role="img" aria-label="Events committed per year">${bars}</svg>
+        <p class="sub" style="margin:0">Solid bar = already attended. Lighter bar = booked or planned.</p>
+      </div>
+
+      <div class="panel table-wrap" id="perf-wrap">
+        <div class="table-box" tabindex="0" role="region" aria-label="Events by year — scrolls sideways">
+          <table class="perf">
+            <thead><tr><th>Event</th><th>Dates</th><th>City</th><th>Status</th><th class="r">Planned</th><th class="r">Actual</th><th class="r">Checklist</th></tr></thead>
+            <tbody>${rows.join("")}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel card">
+        <h2>${mode === "local" ? "Your data" : "The plan's data"}</h2>
+        <p class="prose">${mode === "local"
+          ? "Statuses, checklists, budgets and notes are saved in this browser only. Back them up before switching machines, or to hand them to someone else."
+          : "Everyone with the link edits this plan, and changes reach everyone within seconds. A backup file is a useful snapshot before big changes — restoring one puts back the shows it contains."}</p>
+        <div class="add-row">
+          <button class="btn ghost" type="button" id="backup">Back up to file</button>
+          <button class="btn ghost" type="button" id="restore">Restore from file</button>
+          <input type="file" id="restore-file" accept="application/json,.json" hidden>
+        </div>
+        <p class="sub" id="backup-note" style="margin:0"></p>
+      </div>`;
+
+    enhanceHScroll($("perf-wrap"));
+    $("backup").addEventListener("click", async () => {
+      const text = JSON.stringify({ exported: new Date().toISOString(), ...track }, null, 2);
+      try {
+        await saveFile(text, "fyous-event-tracker-backup.json", "application/json");
+        $("backup-note").textContent = "Backup saved.";
+      } catch (err) {
+        $("backup-note").textContent = err && err.code === "declined" ? "Backup cancelled." : "Couldn't save the backup here.";
+      }
+    });
+    $("restore").addEventListener("click", () => $("restore-file").click());
+    $("restore-file").addEventListener("change", (ev) => {
+      const file = ev.target.files && ev.target.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const data = JSON.parse(String(reader.result));
+          if (!data || typeof data !== "object" || !data.events) throw new Error("bad file");
+          const restored = normaliseTrack({ settings: data.settings || track.settings, events: data.events });
+          // On the shared plan a backup updates the shows it contains and leaves everyone else's alone.
+          if (mode === "shared") Object.assign(track.events, restored.events);
+          else track.events = restored.events;
+          track.settings = restored.settings;
+          save(); renderPerf(); renderList();
+          $("backup-note").textContent = `Restored ${Object.keys(track.events).length} events from the backup${mode === "shared" ? " — saving to the shared plan" : ""}.`;
+        } catch (_) {
+          $("backup-note").textContent = "That file isn't a Fyous tracker backup.";
+        }
+      };
+      reader.readAsText(file);
+      ev.target.value = "";
+    });
+  }
+
+  /* ---------------- Sideways scrolling for wide tables ---------------- */
+  // Adds a scroll bar pinned to the bottom of the window (sticky within the table's panel), with
+  // ◀ ▶ buttons, kept in sync with the table. Hidden whenever the table fits.
+  const hscrollBars = new Set();
+  // Re-measure every bar. Called after re-renders and on resize, so it doesn't rely on ResizeObserver alone.
+  function refreshHScroll() {
+    for (const hs of hscrollBars) {
+      if (!hs.wrap.isConnected) { hscrollBars.delete(hs); continue; }
+      hs.update();
+    }
+  }
+  window.addEventListener("resize", refreshHScroll);
+  function enhanceHScroll(wrap) {
+    if (!wrap || wrap.dataset.hscroll) return;
+    wrap.dataset.hscroll = "1";
+    const box = wrap.querySelector(".table-box");
+    const bar = document.createElement("div");
+    bar.className = "hscroll";
+    bar.hidden = true;
+    bar.innerHTML = `
+      <button type="button" class="hs-btn" data-dir="-1" aria-label="Scroll table left">◀</button>
+      <div class="hs-track" aria-hidden="true"><div class="hs-inner"></div></div>
+      <button type="button" class="hs-btn" data-dir="1" aria-label="Scroll table right">▶</button>
+      <span class="hs-hint">or Shift + scroll</span>`;
+    wrap.append(bar);
+    const track = bar.querySelector(".hs-track");
+    const inner = bar.querySelector(".hs-inner");
+    const [left, right] = bar.querySelectorAll(".hs-btn");
+
+    const max = () => box.scrollWidth - box.clientWidth;
+    function edges() {
+      const m = max();
+      wrap.classList.toggle("more-left", box.scrollLeft > 2);
+      wrap.classList.toggle("more-right", m > 2 && box.scrollLeft < m - 2);
+      left.disabled = box.scrollLeft <= 2;
+      right.disabled = box.scrollLeft >= m - 2;
+    }
+    function update() {
+      const m = max();
+      bar.hidden = m <= 1;
+      // Give the bar the same scroll range as the table so positions map one-to-one.
+      inner.style.width = `${track.clientWidth + Math.max(m, 0)}px`;
+      track.scrollLeft = box.scrollLeft;
+      edges();
+    }
+    // Two-way sync; comparing positions (rather than a flag) can't get stuck.
+    track.addEventListener("scroll", () => {
+      if (Math.abs(box.scrollLeft - track.scrollLeft) > 0.5) box.scrollLeft = track.scrollLeft;
+      edges();
+    }, { passive: true });
+    box.addEventListener("scroll", () => {
+      if (Math.abs(track.scrollLeft - box.scrollLeft) > 0.5) track.scrollLeft = box.scrollLeft;
+      edges();
+    }, { passive: true });
+    bar.addEventListener("click", (ev) => {
+      const b = ev.target.closest(".hs-btn"); if (!b) return;
+      const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches;
+      box.scrollBy({ left: Number(b.dataset.dir) * Math.max(box.clientWidth * 0.6, 200), behavior: smooth ? "smooth" : "auto" });
+    });
+    // A normal mouse wheel over the bar scrolls sideways.
+    bar.addEventListener("wheel", (ev) => {
+      if (Math.abs(ev.deltaY) <= Math.abs(ev.deltaX)) return;
+      ev.preventDefault();
+      box.scrollLeft += ev.deltaY;
+    }, { passive: false });
+
+    hscrollBars.add({ wrap, update });
+    if ("ResizeObserver" in window) {
+      const ro = new ResizeObserver(update);
+      ro.observe(box);
+      if (box.firstElementChild) ro.observe(box.firstElementChild);
+    }
+    update();
+  }
+  enhanceHScroll($("list-wrap"));
+
+  /* ---------------- To do ---------------- */
+  const todoState = { mode: "open" };
+
+  function todoItems() {
+    const items = [];
+    for (const e of EVENTS) {
+      if (!hasChecklist(e.id)) continue;
+      for (const t of rec(e.id).tasks) items.push({ e, t, d: dueOf(t, e) });
+    }
+    return items;
+  }
+
+  function updateTodoBadge() {
+    let overdue = 0, soon = 0;
+    for (const x of todoItems()) {
+      if (x.t.done || !x.d) continue;
+      if (x.d < today) overdue++;
+      else if ((x.d - today) / DAY <= 7) soon++;
+    }
+    const badge = $("todo-badge");
+    badge.hidden = !(overdue + soon);
+    badge.textContent = overdue + soon;
+    badge.className = "badge" + (overdue ? "" : " calm");
+    badge.title = `${overdue} overdue, ${soon} due this week`;
+    $("tab-todo").setAttribute("aria-label", `To do: ${overdue} overdue, ${soon} due this week`);
+  }
+
+  function todoRow(x, showEvent) {
+    const key = `${x.e.id}__${x.t.id}`;
+    return `<li class="${x.t.done ? "done" : ""}">
+      <input type="checkbox" id="td-${key}" data-e="${x.e.id}" data-t="${x.t.id}" ${x.t.done ? "checked" : ""}>
+      <div class="task-text">
+        <label for="td-${key}">${esc(x.t.label)}</label>
+        <span class="due ${dueClass(x.d, x.t.done)}">${esc(dueText(x.d, x.t.done))}</span>
+      </div>
+      ${showEvent ? `<a class="ev-link" href="#/e/${x.e.id}">${esc(x.e.name)} · ${rangeText(x.e)} ›</a>` : "<span></span>"}
+      <button class="del" type="button" data-del-e="${x.e.id}" data-del-t="${x.t.id}" aria-label="Delete task: ${esc(x.t.label)}" title="Delete task">×</button>
+    </li>`;
+  }
+
+  function renderTodo() {
+    renderTodoList();
+  }
+  function renderTodoList() {
+    const items = todoItems();
+    const open = items.filter((x) => !x.t.done);
+    const done = items.filter((x) => x.t.done);
+    const eventsCount = new Set(items.map((x) => x.e.id)).size;
+    const week = new Date(today); week.setDate(week.getDate() + 7);
+    const month = new Date(today); month.setDate(month.getDate() + 30);
+    const byDate = (a, b) => (a.d ?? Infinity) - (b.d ?? Infinity) || a.e.s - b.e.s || a.t.label.localeCompare(b.t.label);
+    const buckets = [
+      { key: "overdue", title: "Overdue", items: open.filter((x) => x.d && x.d < today) },
+      { key: "week", title: "Due in the next 7 days", items: open.filter((x) => x.d && x.d >= today && x.d <= week) },
+      { key: "month", title: "Next 30 days", items: open.filter((x) => x.d && x.d > week && x.d <= month) },
+      { key: "later", title: "Later", items: open.filter((x) => x.d && x.d > month) },
+      { key: "nodate", title: "No deadline", items: open.filter((x) => !x.d) },
+    ];
+
+    $("todo-summary").innerHTML = eventsCount
+      ? `<span class="overdue"><b>${buckets[0].items.length}</b>overdue</span>` +
+        `<span class="soon"><b>${buckets[1].items.length}</b>due in the next 7 days</span>` +
+        `<span><b>${open.length}</b>open across ${eventsCount} show${eventsCount === 1 ? "" : "s"}</span>` +
+        `<span><b>${done.length}</b>done</span>`
+      : "";
+
+    const list = $("todo-list");
+    if (!eventsCount) {
+      list.innerHTML = `<div class="panel empty">No shows are marked Going yet. Open a show from the <a href="#/y/2027">2027</a> or <a href="#/y/2026">2026</a> tab and tick <strong>Going</strong> — its checklist appears here.</div>`;
+      return;
+    }
+
+    if (todoState.mode === "done") {
+      list.innerHTML = done.length
+        ? `<section class="panel bucket"><div class="row-head"><h2>Done<span class="n">${done.length}</span></h2><span class="sub">Untick to reopen</span></div>
+            <ul class="todo">${done.sort(byDate).map((x) => todoRow(x, true)).join("")}</ul></section>`
+        : `<div class="panel empty">Nothing ticked off yet.</div>`;
+      return;
+    }
+
+    const html = buckets.filter((b) => b.items.length).map((b) => {
+      let body;
+      if (b.key === "overdue") {
+        // Overdue is grouped by show, so a backlog for one show can be cleared in one go.
+        const groups = new Map();
+        for (const x of b.items.sort(byDate)) {
+          if (!groups.has(x.e.id)) groups.set(x.e.id, []);
+          groups.get(x.e.id).push(x);
+        }
+        body = [...groups.values()].map((g) => `
+          <div class="group-head">
+            <a href="#/e/${g[0].e.id}">${esc(g[0].e.name)} · ${rangeText(g[0].e)} ${g[0].e.year}</a>
+            <button type="button" class="linkish" data-bulk="${g[0].e.id}">${g.length === 1 ? "Mark done" : `Mark these ${g.length} done`}</button>
+          </div>
+          <ul class="todo">${g.map((x) => todoRow(x, false)).join("")}</ul>`).join("");
+      } else {
+        body = `<ul class="todo">${b.items.sort(byDate).map((x) => todoRow(x, true)).join("")}</ul>`;
+      }
+      return `<section class="panel bucket ${b.key}"><div class="row-head"><h2>${b.title}<span class="n">${b.items.length}</span></h2></div>${body}</section>`;
+    }).join("");
+    list.innerHTML = html || `<div class="panel empty">Everything's done. Nice.</div>`;
+  }
+
+  // Undo toast
+  let toastTimer, undoFn = null;
+  function toast(text, undo) {
+    $("toast-text").textContent = text;
+    undoFn = undo || null;
+    $("toast-undo").hidden = !undo;
+    $("toast").hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { $("toast").hidden = true; undoFn = null; }, 7000);
+  }
+  $("toast-undo").addEventListener("click", () => {
+    if (undoFn) undoFn();
+    undoFn = null; $("toast").hidden = true;
+  });
+
+  function findTask(eventId, taskId) {
+    const r = track.events[eventId];
+    return r && r.tasks ? r.tasks.find((t) => t.id === taskId) : null;
+  }
+  // Delete a task from any page, with Undo that puts it back in the same place.
+  function deleteTask(eventId, taskId, rerender) {
+    const r = track.events[eventId];
+    if (!r || !r.tasks) return;
+    const i = r.tasks.findIndex((t) => t.id === taskId);
+    if (i < 0) return;
+    const [removed] = r.tasks.splice(i, 1);
+    save(); rerender(); updateTodoBadge();
+    toast(`Deleted: ${removed.label}`, () => {
+      r.tasks.splice(Math.min(i, r.tasks.length), 0, removed);
+      save(); rerender(); updateTodoBadge();
+    });
+  }
+  $("todo-list").addEventListener("change", (ev) => {
+    const cb = ev.target.closest("input[type=checkbox][data-t]"); if (!cb) return;
+    const t = findTask(cb.dataset.e, cb.dataset.t); if (!t) return;
+    t.done = cb.checked;
+    save(); updateTodoBadge();
+    const label = t.label;
+    toast(t.done ? `Done: ${label}` : `Reopened: ${label}`, () => { t.done = !t.done; save(); renderTodo(); updateTodoBadge(); });
+    // Let the tick register visually before the row moves.
+    setTimeout(renderTodo, 250);
+  });
+  $("todo-list").addEventListener("click", (ev) => {
+    const del = ev.target.closest("[data-del-t]");
+    if (del) { deleteTask(del.dataset.delE, del.dataset.delT, renderTodo); return; }
+    const b = ev.target.closest("[data-bulk]"); if (!b) return;
+    const e = byId.get(b.dataset.bulk);
+    const targets = rec(e.id).tasks.filter((t) => !t.done && dueClass(dueOf(t, e), false) === "overdue");
+    for (const t of targets) t.done = true;
+    save(); renderTodo(); updateTodoBadge();
+    toast(`Marked ${targets.length} ${e.name} task${targets.length === 1 ? "" : "s"} done`, () => {
+      for (const t of targets) t.done = false;
+      save(); renderTodo(); updateTodoBadge();
+    });
+  });
+  $("todo-mode").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button"); if (!b) return;
+    todoState.mode = b.dataset.v;
+    $("todo-mode").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    renderTodo();
+  });
+
+  /* ---------------- Routing ---------------- */
+  function route() {
+    const hash = location.hash.replace(/^#\/?/, "");
+    const parts = hash.split("/").filter(Boolean);
+    const views = { year: $("view-year"), event: $("view-event"), perf: $("view-perf"), todo: $("view-todo") };
+    let view = "year";
+    if (parts[0] === "e" && parts[1]) view = "event";
+    else if (parts[0] === "perf") view = "perf";
+    else if (parts[0] === "todo") view = "todo";
+    else if (parts[0] === "y" && YEARS.includes(Number(parts[1]))) {
+      if (Number(parts[1]) !== state.year) { state.year = Number(parts[1]); resetFilters(false); }
+    }
+    for (const k of Object.keys(views)) views[k].hidden = k !== view;
+
+    if (view === "event") { renderEvent(parts[1]); }
+    else if (view === "perf") { renderPerf(); }
+    else if (view === "todo") { renderTodo(); }
+    else { renderList(); }
+    updateTodoBadge();
+    $("toast").hidden = true;
+
+    const eventYear = view === "event" && byId.get(parts[1]) ? byId.get(parts[1]).year : null;
+    $("tab-2027").setAttribute("aria-current", view === "year" && state.year === 2027 || eventYear === 2027 ? "page" : "false");
+    $("tab-2026").setAttribute("aria-current", view === "year" && state.year === 2026 || eventYear === 2026 ? "page" : "false");
+    $("tab-perf").setAttribute("aria-current", view === "perf" ? "page" : "false");
+    $("tab-todo").setAttribute("aria-current", view === "todo" ? "page" : "false");
+    window.scrollTo({ top: 0, behavior: "auto" });
+    refreshHScroll();
+  }
+  window.addEventListener("hashchange", route);
+
+  /* ---------------- Controls ---------------- */
+  let qTimer;
+  $("q").addEventListener("input", (ev) => {
+    clearTimeout(qTimer);
+    const v = ev.target.value;
+    qTimer = setTimeout(() => { state.q = fold(v).split(/\s+/).filter(Boolean); if (!state.q.length) state.q = ""; renderList(); }, 90);
+  });
+  $("region").addEventListener("change", (ev) => { state.region = ev.target.value; renderList(); });
+  $("fit").addEventListener("change", (ev) => { state.fit = ev.target.value; renderList(); });
+  $("cat").addEventListener("click", (ev) => {
+    const b = ev.target.closest("button"); if (!b) return;
+    state.cat = b.dataset.v;
+    $("cat").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b));
+    renderList();
+  });
+  $("months").addEventListener("click", (ev) => {
+    const b = ev.target.closest(".month"); if (!b) return;
+    const m = Number(b.dataset.m);
+    state.month = state.month === m ? null : m;
+    renderList();
+  });
+  document.querySelectorAll("thead th[data-key] button").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const k = btn.closest("th").dataset.key;
+      if (state.sort === k) state.dir *= -1;
+      else { state.sort = k; state.dir = k === "attendees" || k === "exhibitors" ? -1 : 1; }
+      renderList();
+    });
+  });
+  function resetFilters(render = true) {
+    Object.assign(state, DEFAULTS, { year: state.year, sort: state.sort, dir: state.dir });
+    $("q").value = ""; $("region").value = "all"; $("fit").value = "all";
+    $("cat").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.v === "all"));
+    if (render) renderList();
+  }
+  $("reset").addEventListener("click", () => resetFilters());
+  $("claude-filter-clear").addEventListener("click", () => { state.only = null; renderList(); });
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key !== "/" || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+    const t = ev.target;
+    if (t.closest && t.closest("input, select, textarea, [contenteditable]")) return;
+    if ($("view-year").hidden) return;
+    ev.preventDefault(); $("q").focus();
+  });
+
+  /* ---------------- CSV / file saving ---------------- */
+  function toCsv(list) {
+    const cols = ["Event", "Year", "Website", "Start", "End", "City", "Country", "Region", "Sector", "Type",
+      "Attendees", "Attendees basis", "Exhibitors", "Exhibitors basis", "Who it's for", "Fyous fit", "Why",
+      "Status", "Planned", "Actual", "Same trip", "Clashes with"];
+    const cell = (v) => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+    const lines = list.map((e) => {
+      const t = totals(e.id);
+      return [e.name, e.year, e.url, e.start, e.end, e.city, e.country, e.region,
+        e.cat === "dental" ? "Dental" : "Manufacturing", e.tag,
+        e.attendees ?? "", e.attendeesNote + (e.attendeesEst ? " (estimate)" : ""),
+        e.exhibitors ?? "", e.exhibitorsNote + (e.exhibitorsEst ? " (estimate)" : ""),
+        e.audience, FIT_LABEL[e.fit], e.why, STATUS_LABEL[statusOf(e.id)] || "",
+        t.planned || "", t.actual || "",
+        e.sameTrip.map((c) => c.name).join("; "), e.clashes.map((c) => c.name).join("; ")].map(cell).join(",");
+    });
+    return "﻿" + [cols.join(","), ...lines].join("\r\n");
+  }
+  let saveFile = async (text, filename, type) => {
+    const url = URL.createObjectURL(new Blob([text], { type }));
+    const a = Object.assign(document.createElement("a"), { href: url, download: filename });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  if (!window.claude) $("export").hidden = false;
+  $("export").addEventListener("click", async () => {
+    const btn = $("export");
+    try {
+      await saveFile(toCsv(lastVisible), `fyous-events-${state.year}.csv`, "text/csv");
+      btn.textContent = "Exported";
+    } catch (err) {
+      btn.textContent = err && err.code === "declined" ? "Export CSV" : "Export unavailable";
+    }
+    setTimeout(() => { btn.textContent = "Export CSV"; }, 2500);
+  });
+
+  /* ---------------- Shared plan: everyone edits the same plan, live ---------------- */
+  // Each show's plan is one row in the database, so two people working on different shows never
+  // overwrite each other. Changes save a moment after you make them, and arrive in everyone
+  // else's open page within seconds. (If two people change the SAME show within a second or so,
+  // the later save wins.)
+  const SYNC_DELAY = 700;
+  const CLIENT_ID = uid() + uid();       // identifies this open page, so its own saves aren't re-applied
+  const IMPORT_DISMISSED_KEY = "fyous-scout-import-dismissed-v1";
+  let db = null, loaded = !SHARED;
+  let syncTimer = null, syncing = false, failures = 0;
+  let syncState = SHARED ? "loading" : "local", syncError = "";
+  let pollTimer = null, rerenderTimer = null;
+
+  // What each show's plan looked like when last rendered, saved or received — so only the shows a person
+  // actually changes are saved (not default checklists the page fills in just by displaying a show).
+  const baseline = new Map();
+  const userDirty = new Set();
+  let settingsBaseline = "", settingsDirty = false;
+
+  function captureBaseline() {
+    for (const [id, r] of Object.entries(track.events)) {
+      if (!userDirty.has(id)) baseline.set(id, JSON.stringify(r));
+    }
+    if (!settingsDirty) settingsBaseline = JSON.stringify(track.settings);
+  }
+  function noteLocalChanges() {
+    for (const [id, r] of Object.entries(track.events)) {
+      const json = JSON.stringify(r);
+      if (baseline.get(id) !== json) { userDirty.add(id); baseline.set(id, json); }
+    }
+    const s = JSON.stringify(track.settings);
+    if (s !== settingsBaseline) { settingsDirty = true; settingsBaseline = s; }
+  }
+
+  function renderLiveStatus() {
+    const el = $("live-status");
+    if (mode === "local") { el.hidden = true; return; }
+    const states = {
+      loading: ["busy", "Loading the shared plan…"],
+      pending: ["busy", "Saving…"],
+      saving: ["busy", "Saving…"],
+      saved: ["ok", "✓ Saved — everyone sees changes live"],
+      offline: ["bad", "Can't reach the shared plan — your changes will save when the connection is back"],
+      error: ["bad", `Couldn't save (${esc(syncError)}). <button type="button" data-sync="retry">Try again</button>`],
+      loadError: ["bad", `Couldn't load the shared plan (${esc(syncError)}). <button type="button" data-sync="reload">Reload</button>`],
+    };
+    const [cls, html] = states[syncState] || states.saved;
+    el.className = `live-status ${cls}`;
+    el.innerHTML = html;
+    el.hidden = false;
+  }
+  $("live-status").addEventListener("click", (ev) => {
+    if (ev.target.closest('[data-sync="retry"]')) { failures = 0; flushSync(); }
+    if (ev.target.closest('[data-sync="reload"]')) location.reload();
+  });
+
+  function scheduleSync() {
+    if (!loaded || !db) return;
+    if (syncState !== "offline" && syncState !== "error") syncState = "pending";
+    renderLiveStatus();
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(flushSync, SYNC_DELAY);
+  }
+
+  const describeError = (e) => String((e && (e.message || e.error_description || e.code)) || "unknown error").slice(0, 120);
+  const looksOffline = (msg) => navigator.onLine === false || /fetch|network|timeout|offline/i.test(msg);
+
+  async function flushSync() {
+    if (!loaded || !db) return;
+    if (syncing) { clearTimeout(syncTimer); syncTimer = setTimeout(flushSync, 400); return; }
+    const pending = [...userDirty]
+      .filter((id) => track.events[id])
+      .map((id) => ({ id, json: JSON.stringify(track.events[id]) }));
+    const settingsJson = settingsDirty ? JSON.stringify(track.settings) : null;
+    if (!pending.length && settingsJson === null) { syncState = "saved"; renderLiveStatus(); return; }
+
+    syncing = true;
+    syncState = "saving";
+    renderLiveStatus();
+    try {
+      if (pending.length) {
+        const rows = pending.map((p) => ({ event_id: p.id, data: JSON.parse(p.json), updated_by: CLIENT_ID, updated_at: new Date().toISOString() }));
+        const { error } = await db.from("event_plans").upsert(rows);
+        if (error) throw error;
+        // Only mark a show saved if nobody changed it again while this save was on its way.
+        for (const p of pending) if (JSON.stringify(track.events[p.id]) === p.json) userDirty.delete(p.id);
+      }
+      if (settingsJson !== null) {
+        const { error } = await db.from("app_settings").upsert({ key: "plan", value: JSON.parse(settingsJson), updated_by: CLIENT_ID, updated_at: new Date().toISOString() });
+        if (error) throw error;
+        if (JSON.stringify(track.settings) === settingsJson) settingsDirty = false;
+      }
+      failures = 0;
+      syncError = "";
+      if (userDirty.size || settingsDirty) {
+        syncState = "pending";
+        clearTimeout(syncTimer);
+        syncTimer = setTimeout(flushSync, SYNC_DELAY);
+      } else {
+        syncState = "saved";
+      }
+    } catch (e) {
+      failures++;
+      syncError = describeError(e);
+      syncState = looksOffline(syncError) ? "offline" : "error";
+      clearTimeout(syncTimer);
+      syncTimer = setTimeout(flushSync, Math.min(60000, 2000 * 2 ** Math.min(failures, 5))); // keep retrying, backing off
+    } finally {
+      syncing = false;
+      renderLiveStatus();
+    }
+  }
+
+  // Someone else's change arrives. A show this person has unsaved changes to keeps their version
+  // (it saves a moment later); everything else is updated in place.
+  function applyRemote(table, row) {
+    if (!row) return false;
+    if (table === "event_plans") {
+      const id = row.event_id;
+      if (!id || userDirty.has(id)) return false;
+      const incoming = normaliseTrack({ events: { [id]: row.data || {} } }).events[id];
+      const json = JSON.stringify(incoming);
+      const current = track.events[id];
+      if (JSON.stringify(current === undefined ? null : current) === json) return false;
+      // Update the existing record in place: the open page's buttons and fields keep a reference to it,
+      // so anything typed before the page redraws still lands in the plan and saves.
+      if (current && typeof current === "object") {
+        for (const k of Object.keys(current)) delete current[k];
+        Object.assign(current, incoming);
+      } else {
+        track.events[id] = incoming;
+      }
+      baseline.set(id, json);
+      return true;
+    }
+    if (table === "app_settings" && row.key === "plan") {
+      if (settingsDirty) return false;
+      const incoming = normaliseTrack({ settings: row.value }).settings;
+      const json = JSON.stringify(incoming);
+      if (JSON.stringify(track.settings) === json) return false;
+      track.settings = incoming;
+      settingsBaseline = json;
+      return true;
+    }
+    return false;
+  }
+  function onRemoteChange(table, payload) {
+    const row = payload && payload.new;
+    if (!row || row.updated_by === CLIENT_ID) return; // this page's own save coming back
+    if (applyRemote(table, row)) queueRerender();
+  }
+  // Re-draw after remote changes, but never while someone is typing into a field on the page.
+  function queueRerender() {
+    clearTimeout(rerenderTimer);
+    rerenderTimer = setTimeout(() => {
+      const a = document.activeElement;
+      const typing = document.hasFocus() && a && a.matches && a.matches('input[type="text"], input[type="number"], input[type="date"], textarea') && !a.closest("#view-year");
+      if (typing) { queueRerender(); return; } // check again shortly
+      refreshView();
+      updateTodoBadge();
+    }, 250);
+  }
+
+  async function fetchAll() {
+    const [plans, settings] = await Promise.all([
+      db.from("event_plans").select("event_id, data, updated_by"),
+      db.from("app_settings").select("key, value, updated_by").eq("key", "plan"),
+    ]);
+    if (plans.error) throw plans.error;
+    if (settings.error) throw settings.error;
+    return { plans: plans.data || [], settings: (settings.data || [])[0] || null };
+  }
+
+  async function loadShared() {
+    db = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, { auth: { persistSession: false } });
+    const { plans, settings } = await fetchAll();
+    const events = {};
+    for (const row of plans) events[row.event_id] = row.data || {};
+    track = normaliseTrack({ settings: settings ? settings.value : undefined, events });
+    for (const [id, r] of Object.entries(track.events)) baseline.set(id, JSON.stringify(r));
+    settingsBaseline = JSON.stringify(track.settings);
+    loaded = true;
+    db.channel("fyous-shared-plan")
+      .on("postgres_changes", { event: "*", schema: "public", table: "event_plans" }, (p) => onRemoteChange("event_plans", p))
+      .on("postgres_changes", { event: "*", schema: "public", table: "app_settings" }, (p) => onRemoteChange("app_settings", p))
+      .subscribe((status) => {
+        // If live updates can't connect, check for changes every 20 seconds instead.
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") startPolling();
+        if (status === "SUBSCRIBED") stopPolling();
+      });
+    // Catch anything missed while the tab was in the background or the laptop was asleep.
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refetch(); });
+    window.addEventListener("online", () => { refetch(); if (userDirty.size || settingsDirty) flushSync(); });
+  }
+  async function refetch() {
+    if (!loaded || !db) return;
+    try {
+      const { plans, settings } = await fetchAll();
+      let changed = false;
+      for (const row of plans) changed = applyRemote("event_plans", row) || changed;
+      if (settings) changed = applyRemote("app_settings", settings) || changed;
+      if (changed) queueRerender();
+    } catch (_) { /* the status line already reports save problems; a missed refresh retries next time */ }
+  }
+  function startPolling() { if (!pollTimer) pollTimer = setInterval(refetch, 20000); }
+  function stopPolling() { clearInterval(pollTimer); pollTimer = null; }
+
+  function applyMode() {
+    document.body.classList.toggle("loading", mode === "shared" && !loaded);
+    $("footer-save").innerHTML = mode === "local"
+      ? "<strong>This copy isn't connected to the shared plan</strong> — changes save in this browser only."
+      : "<strong>This is the shared plan.</strong> Everyone with the link can edit it: changes save automatically and appear for everyone within seconds.";
+    renderLiveStatus();
+  }
+  // Re-render the current tab in place (route() normally scrolls to the top and clears any message).
+  function refreshView() {
+    const y = window.scrollY;
+    const toastWasOpen = !$("toast").hidden;
+    route();
+    if (toastWasOpen) $("toast").hidden = false;
+    window.scrollTo(0, y);
+  }
+
+  // A plan saved in this browser before the page was shared: offer to add it to the shared plan.
+  function showImportBanner() {
+    const banner = $("live-banner");
+    let dismissed = false;
+    try { dismissed = localStorage.getItem(IMPORT_DISMISSED_KEY) === "1"; } catch (_) {}
+    const local = mode === "shared" && !dismissed ? readLocalTracker() : null;
+    const missing = local ? Object.keys(local.events).filter((id) => !track.events[id] && byId.has(id)) : [];
+    if (!missing.length) { banner.hidden = true; return; }
+    banner.innerHTML = `<p><strong>This browser has statuses, checklists or budgets for ${missing.length} show${missing.length === 1 ? "" : "s"}</strong> saved before the plan was shared. Add them to the shared plan so everyone sees them?</p>
+      <button class="btn" type="button" data-banner="import">Add them</button>
+      <button class="btn ghost" type="button" data-banner="dismiss">Not now</button>`;
+    banner.hidden = false;
+  }
+  $("live-banner").addEventListener("click", (ev) => {
+    const b = ev.target.closest("[data-banner]"); if (!b) return;
+    if (b.dataset.banner === "import") {
+      const local = readLocalTracker();
+      if (local) for (const [id, r] of Object.entries(local.events)) if (!track.events[id] && byId.has(id)) track.events[id] = r;
+      save();
+      refreshView();
+      toast("Added to the shared plan.");
+    }
+    try { localStorage.setItem(IMPORT_DISMISSED_KEY, "1"); } catch (_) {}
+    $("live-banner").hidden = true;
+  });
+
+  /* ---------------- Claude-powered features ---------------- */
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("downloads").then((dl) => {
+      if (!dl) return;
+      saveFile = (text, filename) => dl.save({ filename, data: text });
+      $("export").hidden = false;
+    });
+    window.claude.use("sample").then((sample) => { if (sample) setupAsk(sample); });
+  }
+
+  function setupAsk(sample) {
+    $("ask").hidden = false;
+    const out = $("ask-out"), go = $("ask-go"), stop = $("ask-stop"), input = $("ask-q");
+    let ctl = null, toolsOk = false;
+    sample.limits().then((l) => { toolsOk = !!(l && l.tools); }).catch(() => {});
+
+    const compact = () => EVENTS.filter((e) => e.year === state.year).map((e) => ({
+      id: e.id, name: e.name, start: e.start, end: e.end, city: e.city, country: e.country, region: e.region,
+      sector: e.cat === "dental" ? "dental" : "manufacturing", type: e.tag,
+      attendees: e.attendees, attendeesBasis: e.attendeesNote + (e.attendeesEst ? " (estimate)" : ""),
+      exhibitors: e.exhibitors, exhibitorsBasis: e.exhibitorsNote + (e.exhibitorsEst ? " (estimate)" : ""),
+      audience: e.audience, fyousFit: e.fit, why: e.why, status: statusOf(e.id) || "undecided",
+      plannedBudget: totals(e.id).planned || null,
+      clashesWith: e.clashes.map((c) => c.id), sameCitySameDays: e.sameTrip.map((c) => c.id),
+    }));
+
+    async function ask(question) {
+      question = question.trim();
+      if (!question) { input.focus(); return; }
+      ctl?.abort();
+      ctl = new AbortController();
+      const myCtl = ctl;
+      out.hidden = false; out.classList.add("thinking"); out.textContent = "Thinking…";
+      go.disabled = true; stop.hidden = false;
+
+      const prompt =
+`You help Fyous plan which trade shows and conferences to attend.
+Fyous builds machines with thousands of small moving pins that form custom moulds quickly with no material waste; its first product replaces 3D-printed models for thermoforming clear dental aligners. Buyers are dental labs and aligner manufacturers; relevant communities include orthodontists, 3D printing/additive manufacturing, thermoforming and plastics.
+
+Today's date: ${today.toISOString().slice(0, 10)}. The data below covers ${state.year} and was checked on ${DATA.checked}. Budgets are in ${track.settings.currency}.
+Rules:
+- Use ONLY the events in the data. Never invent events, dates, prices or attendance.
+- Refer to events by name and include their dates and city.
+- Figures marked "(estimate)" are rough guides; say so if it matters.
+- "status" is what Fyous has decided so far; "sameCitySameDays" means one trip covers both; "clashesWith" means a choice has to be made.
+- Be concise and practical: short paragraphs or simple dashes, no markdown headings, no bold, no tables. Under 220 words.
+${toolsOk ? "- When your answer recommends specific events, call show_events once with their ids so the table shows them." : ""}
+
+EVENTS (JSON):
+${JSON.stringify(compact())}
+
+QUESTION: ${question}`;
+
+      const opts = { signal: myCtl.signal, onText: ({ text }) => { out.classList.remove("thinking"); out.textContent = text; } };
+      if (toolsOk) {
+        opts.tools = [{
+          name: "show_events",
+          description: "Filter the page's event table to exactly these events so the viewer can see them. Returns how many are now shown.",
+          inputSchema: { type: "object", properties: { ids: { type: "array", items: { type: "string" }, description: "Event ids from the data" } }, required: ["ids"] },
+          execute: (inp) => {
+            const ids = (Array.isArray(inp.ids) ? inp.ids : []).map(String).filter((id) => byId.has(id));
+            if (!ids.length) throw new Error("None of those ids exist in the data.");
+            if (myCtl.signal.aborted) return "cancelled";
+            resetFilters(false);
+            state.only = new Set(ids);
+            $("claude-filter-text").textContent = `Showing the ${ids.length} event${ids.length === 1 ? "" : "s"} Claude picked`;
+            renderList();
+            return `Showing ${ids.length} events.`;
+          },
+        }];
+      }
+      try {
+        const res = await sample(prompt, opts);
+        if (res.truncated) out.textContent += "\n\n(Answer cut short — try a narrower question.)";
+      } catch (e) {
+        if (myCtl.signal.aborted || e?.code === "cancelled") out.textContent = e?.text || "Stopped.";
+        else if (["not_granted", "sampling_disabled", "not_declared", "capability_disabled", "capability_removed"].includes(e?.code)) $("ask").hidden = true;
+        else if (e?.code === "rate_limited") out.textContent = (e.text ? e.text + "\n\n" : "") + "Too many questions at once — wait a minute, then ask again.";
+        else if (e?.code === "refused") out.textContent = "Claude couldn't answer that one. Try rephrasing the question.";
+        else out.textContent = (e?.text ? e.text + "\n\n" : "") + "The answer was interrupted. Ask again to retry.";
+      } finally {
+        out.classList.remove("thinking");
+        if (ctl === myCtl) { go.disabled = false; stop.hidden = true; ctl = null; }
+      }
+    }
+    $("ask-form").addEventListener("submit", (ev) => { ev.preventDefault(); ask(input.value); });
+    stop.addEventListener("click", () => ctl?.abort());
+    $("ask-chips").addEventListener("click", (ev) => {
+      const b = ev.target.closest("button"); if (!b) return;
+      input.value = b.textContent; ask(b.textContent);
+    });
+  }
+
+  /* ---------------- Header graphic: pin heights forming an upper dental arch ---------------- */
+  function drawPins() {
+    const c = $("pinfield");
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.round((c.clientWidth || 240) * dpr), H = Math.round(W * 0.4);
+    if (c.width !== W) { c.width = W; c.height = H; }
+    const ctx = c.getContext("2d");
+    const css = getComputedStyle(document.documentElement);
+    const lo = css.getPropertyValue("--pin-lo").trim(), hi = css.getPropertyValue("--pin-hi").trim();
+    const cols = 40, rows = 16, sx = W / cols, sy = H / rows, rMax = Math.min(sx, sy);
+    ctx.clearRect(0, 0, W, H);
+    for (let r = 0; r < rows; r++) {
+      for (let q = 0; q < cols; q++) {
+        const x = (q + 0.5) / cols * 2 - 1, y = (r + 0.5) / rows;
+        const d = Math.abs(y - (0.18 + 0.72 * x * x)) / 0.16;
+        const tooth = 0.75 + 0.25 * Math.cos(Math.atan2(y - 0.9, x) * 14.4);
+        const h = Math.abs(x) < 0.97 ? Math.max(0, 1 - d * d) * tooth : 0;
+        ctx.beginPath();
+        ctx.arc((q + 0.5) * sx, (r + 0.5) * sy, rMax * (0.2 + 0.2 * h), 0, 6.2832);
+        ctx.fillStyle = h > 0.05 ? hi : lo;
+        ctx.globalAlpha = h > 0.05 ? 0.35 + 0.65 * h : 1;
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  if (DATA.checked) {
+    const d = parse(DATA.checked).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+    const age = Math.round((today - parse(DATA.checked)) / DAY);
+    $("checked").textContent =
+      `Dates and figures were checked against organiser sites on ${d}${age > 10 ? ` — ${age} days ago` : ""}. ` +
+      `Claude Code re-checks them against the organisers every Monday and updates this page; confirm on the official site before booking travel.`;
+    $("ask-note").textContent = `Answers use the event data on this page, verified ${d} and re-checked weekly.`;
+  }
+  // Start. On the website, the shared plan loads first; the page is drawn behind a "loading" state so
+  // nothing can be changed before everyone's latest edits are in.
+  applyMode();
+  route();
+  if (SHARED) {
+    loadShared()
+      .then(() => {
+        syncState = "saved";
+        applyMode();
+        refreshView();
+        captureBaseline();
+        showImportBanner();
+      })
+      .catch((e) => {
+        syncError = describeError(e);
+        syncState = "loadError";
+        renderLiveStatus();
+      });
+  }
+  drawPins();
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawPins);
+  new MutationObserver(drawPins).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+})();
+</script>
